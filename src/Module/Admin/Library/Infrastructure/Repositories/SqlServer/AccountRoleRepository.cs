@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Core;
-using NetModular.Module.Admin.Domain.Account;
-using NetModular.Module.Admin.Domain.AccountRole;
-using NetModular.Module.Admin.Domain.Role;
-using NetModular.Module.Admin.Domain.RoleMenu;
-using NetModular.Module.Admin.Domain.RoleMenuButton;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Core;
+using Nm.Module.Admin.Domain.Account;
+using Nm.Module.Admin.Domain.AccountRole;
+using Nm.Module.Admin.Domain.Role;
+using Nm.Module.Admin.Domain.RoleMenu;
+using Nm.Module.Admin.Domain.RoleMenuButton;
 
-namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
+namespace Nm.Module.Admin.Infrastructure.Repositories.SqlServer
 {
-    public class AccountRoleRepository : RepositoryAbstract<AccountRole>, IAccountRoleRepository
+    public class AccountRoleRepository : RepositoryAbstract<AccountRoleEntity>, IAccountRoleRepository
     {
         public AccountRoleRepository(IDbContext dbContext) : base(dbContext)
         {
@@ -32,37 +32,37 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
             return Db.Find(m => m.AccountId == accountId && m.RoleId == roleId).ExistsAsync();
         }
 
-        public Task<IList<Role>> QueryRole(Guid accountId)
+        public Task<IList<RoleEntity>> QueryRole(Guid accountId)
         {
             return Db.Find(m => m.AccountId == accountId)
-                .InnerJoin<Role>((x, y) => x.RoleId == y.Id)
+                .InnerJoin<RoleEntity>((x, y) => x.RoleId == y.Id)
                 .Select((x, y) => new { y })
-                .ToListAsync<Role>();
+                .ToListAsync<RoleEntity>();
         }
 
-        public Task<IList<AccountRole>> QueryByRole(Guid roleId)
+        public Task<IList<AccountRoleEntity>> QueryByRole(Guid roleId)
         {
             return Db.Find(m => m.RoleId == roleId).ToListAsync();
         }
 
-        public Task<IList<AccountRole>> QueryByMenu(Guid menuId)
+        public Task<IList<AccountRoleEntity>> QueryByMenu(Guid menuId)
         {
             return Db.Find()
-                .InnerJoin<RoleMenu>((x, y) => x.RoleId == y.RoleId)
+                .InnerJoin<RoleMenuEntity>((x, y) => x.RoleId == y.RoleId)
                 .Where((x, y) => y.MenuId == menuId)
                 .ToListAsync();
         }
 
-        public Task<IList<AccountRole>> QueryByButton(Guid buttonId)
+        public Task<IList<AccountRoleEntity>> QueryByButton(Guid buttonId)
         {
             return Db.Find()
-                .InnerJoin<RoleMenuButton>((x, y) => x.RoleId == y.RoleId && y.ButtonId == buttonId)
+                .InnerJoin<RoleMenuButtonEntity>((x, y) => x.RoleId == y.RoleId && y.ButtonId == buttonId)
                 .ToListAsync();
         }
 
         public Task<bool> ExistsByRole(Guid roleId)
         {
-            return Db.Find(m => m.RoleId == roleId).InnerJoin<Account>((x, y) => x.AccountId == y.Id && y.Deleted == false).ExistsAsync();
+            return Db.Find(m => m.RoleId == roleId).InnerJoin<AccountEntity>((x, y) => x.AccountId == y.Id && y.Deleted == false).ExistsAsync();
         }
     }
 }

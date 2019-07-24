@@ -1,24 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Pagination;
+using Nm.Lib.Data.Abstractions;
+using Nm.Module.Admin.Domain.Button.Models;
 
-namespace NetModular.Module.Admin.Domain.Button
+namespace Nm.Module.Admin.Domain.Button
 {
     /// <summary>
     /// 按钮仓储
     /// </summary>
-    public interface IButtonRepository : IRepository<Button>
+    public interface IButtonRepository : IRepository<ButtonEntity>
     {
         /// <summary>
         /// 查询按钮列表
         /// </summary>
-        /// <param name="paging">分页</param>
-        /// <param name="menuId">管理菜单id</param>
-        /// <param name="name">名称</param>
         /// <returns></returns>
-        Task<IList<Button>> Query(Paging paging, Guid menuId, string name = null);
+        Task<IList<ButtonEntity>> Query(ButtonQueryModel model);
 
         /// <summary>
         /// 判断是否存在
@@ -33,7 +30,7 @@ namespace NetModular.Module.Admin.Domain.Button
         /// </summary>
         /// <param name="menuId"></param>
         /// <returns></returns>
-        Task<IList<Button>> QueryByMenu(Guid menuId);
+        Task<IList<ButtonEntity>> QueryByMenu(Guid menuId);
 
         /// <summary>
         /// 查询指定账户拥有的按钮编码列表
@@ -53,6 +50,6 @@ namespace NetModular.Module.Admin.Domain.Button
         /// </summary>
         /// <param name="button"></param>
         /// <returns></returns>
-        Task<bool> UpdateForSync(Button button);
+        Task<bool> UpdateForSync(ButtonEntity button);
     }
 }

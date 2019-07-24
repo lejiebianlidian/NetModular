@@ -2,20 +2,20 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Entities;
-using NetModular.Lib.Data.Abstractions.Enums;
-using NetModular.Lib.Data.Abstractions.Pagination;
-using NetModular.Lib.Data.Abstractions.SqlQueryable;
-using NetModular.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable;
-using NetModular.Lib.Data.Core.SqlQueryable.GroupByQueryable;
-using NetModular.Lib.Data.Core.SqlQueryable.Internal;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Abstractions.Entities;
+using Nm.Lib.Data.Abstractions.Enums;
+using Nm.Lib.Data.Abstractions.Pagination;
+using Nm.Lib.Data.Abstractions.SqlQueryable;
+using Nm.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable;
+using Nm.Lib.Data.Core.SqlQueryable.GroupByQueryable;
+using Nm.Lib.Data.Core.SqlQueryable.Internal;
 
-namespace NetModular.Lib.Data.Core.SqlQueryable
+namespace Nm.Lib.Data.Core.SqlQueryable
 {
     internal class NetSqlQueryable<TEntity> : NetSqlQueryableAbstract, INetSqlQueryable<TEntity> where TEntity : IEntity, new()
     {
-        public NetSqlQueryable(IDbSet<TEntity> dbSet, Expression<Func<TEntity, bool>> whereExpression) : base(dbSet, new QueryBody(dbSet.DbContext.Options.SqlAdapter))
+        public NetSqlQueryable(IDbSet<TEntity> dbSet, Expression<Func<TEntity, bool>> whereExpression, string tableName) : base(dbSet, new QueryBody(dbSet.DbContext.Options.SqlAdapter), tableName)
         {
             QueryBody.JoinDescriptors.Add(new QueryJoinDescriptor
             {
@@ -123,20 +123,6 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
 
         #endregion
 
-        #region ==First==
-
-        public TEntity First()
-        {
-            return First<TEntity>();
-        }
-
-        public Task<TEntity> FirstAsync()
-        {
-            return FirstAsync<TEntity>();
-        }
-
-        #endregion
-
         #region ==Delete==
 
         public bool Delete()
@@ -153,14 +139,14 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
 
         public int DeleteWithAffectedNum()
         {
-            var sql = QueryBuilder.DeleteSqlBuild(Db.EntityDescriptor.TableName, out QueryParameters parameters);
+            var sql = QueryBuilder.DeleteSqlBuild(out IQueryParameters parameters);
 
             return Db.Execute(sql, parameters.Parse());
         }
 
         public Task<int> DeleteWithAffectedNumAsync()
         {
-            var sql = QueryBuilder.DeleteSqlBuild(Db.EntityDescriptor.TableName, out QueryParameters parameters);
+            var sql = QueryBuilder.DeleteSqlBuild(out IQueryParameters parameters);
 
             return Db.ExecuteAsync(sql, parameters.Parse());
         }
@@ -183,14 +169,14 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
 
         public int SoftDeleteWithAffectedNum()
         {
-            var sql = QueryBuilder.SoftDeleteSqlBuild(Db.EntityDescriptor.TableName, out QueryParameters parameters);
+            var sql = QueryBuilder.SoftDeleteSqlBuild(out IQueryParameters parameters);
 
             return Db.Execute(sql, parameters.Parse());
         }
 
         public Task<int> SoftDeleteWithAffectedNumAsync()
         {
-            var sql = QueryBuilder.SoftDeleteSqlBuild(Db.EntityDescriptor.TableName, out QueryParameters parameters);
+            var sql = QueryBuilder.SoftDeleteSqlBuild(out IQueryParameters parameters);
 
             return Db.ExecuteAsync(sql, parameters.Parse());
         }
@@ -215,7 +201,7 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
         {
             QueryBody.Update = expression;
             QueryBody.SetModifiedBy = setModifiedBy;
-            var sql = QueryBuilder.UpdateSqlBuild(Db.EntityDescriptor.TableName, out QueryParameters parameters);
+            var sql = QueryBuilder.UpdateSqlBuild(out IQueryParameters parameters);
 
             return Db.Execute(sql, parameters.Parse());
         }
@@ -224,7 +210,7 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
         {
             QueryBody.Update = expression;
             QueryBody.SetModifiedBy = setModifiedBy;
-            var sql = QueryBuilder.UpdateSqlBuild(Db.EntityDescriptor.TableName, out QueryParameters parameters);
+            var sql = QueryBuilder.UpdateSqlBuild(out IQueryParameters parameters);
 
             return Db.ExecuteAsync(sql, parameters.Parse());
         }
@@ -280,14 +266,23 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
 
         #endregion
 
+        #region ==GroupBy==
+
+        public IGroupByQueryable1<TResult, TEntity> GroupBy<TResult>(Expression<Func<TEntity, TResult>> expression)
+        {
+            return new GroupByQueryable1<TResult, TEntity>(Db, QueryBody, QueryBuilder, expression);
+        }
+
+        #endregion
+
         #region ==ToList==
 
-        public IList<TEntity> ToList()
+        public new IList<TEntity> ToList()
         {
             return ToList<TEntity>();
         }
 
-        public Task<IList<TEntity>> ToListAsync()
+        public new Task<IList<TEntity>> ToListAsync()
         {
             return ToListAsync<TEntity>();
         }
@@ -296,23 +291,28 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
 
         #region ==Pagination==
 
-        public IList<TEntity> Pagination(Paging paging = null)
+        public new IList<TEntity> Pagination(Paging paging = null)
         {
             return Pagination<TEntity>(paging);
         }
 
-        public Task<IList<TEntity>> PaginationAsync(Paging paging = null)
+        public new Task<IList<TEntity>> PaginationAsync(Paging paging = null)
         {
             return PaginationAsync<TEntity>(paging);
         }
 
         #endregion
 
-        #region ==GroupBy==
+        #region ==First==
 
-        public IGroupByQueryable1<TResult, TEntity> GroupBy<TResult>(Expression<Func<TEntity, TResult>> expression)
+        public new TEntity First()
         {
-            return new GroupByQueryable1<TResult, TEntity>(Db, QueryBody, QueryBuilder, expression);
+            return First<TEntity>();
+        }
+
+        public new Task<TEntity> FirstAsync()
+        {
+            return FirstAsync<TEntity>();
         }
 
         #endregion

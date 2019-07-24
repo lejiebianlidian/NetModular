@@ -43,7 +43,7 @@ export default {
     // 文本
     text: {
       type: String,
-      default: '删除'
+      default: '批量删除'
     },
     // 删除方法
     action: {

@@ -1,20 +1,26 @@
-﻿using System.Data;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Entities;
+﻿using System;
+using System.Data;
+using System.Text;
+using Dapper;
+using Nm.Lib.Auth.Abstractions;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Abstractions.Entities;
 
-namespace NetModular.Lib.Data.Core
+namespace Nm.Lib.Data.Core
 {
     /// <summary>
     /// 数据库上下文
     /// </summary>
     public abstract class DbContext : IDbContext
     {
+        private static readonly object Lock = new object();
+
         #region ==属性==
 
         /// <summary>
-        /// 当前登录账户编号
+        /// 登录信息
         /// </summary>
-        public string AccountId => Options.HttpContextAccessor?.HttpContext.User.FindFirst("id")?.Value;
+        public ILoginInfo LoginInfo { get; }
 
         /// <summary>
         /// 数据库上下文配置项
@@ -38,14 +44,27 @@ namespace NetModular.Lib.Data.Core
         protected DbContext(IDbContextOptions options)
         {
             Options = options;
+            LoginInfo = Options.LoginInfo;
         }
 
         #endregion
 
         #region ==方法==
 
-        public IDbTransaction BeginTransaction(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        public IDbTransaction BeginTransaction()
         {
+            if (Options.SqlAdapter.SqlDialect == Abstractions.Enums.SqlDialect.SQLite)
+                return null;
+
+            Open();
+            return Transaction = Transaction ?? Connection.BeginTransaction();
+        }
+
+        public IDbTransaction BeginTransaction(IsolationLevel isolationLevel)
+        {
+            if (Options.SqlAdapter.SqlDialect == Abstractions.Enums.SqlDialect.SQLite)
+                return null;
+
             Open();
             return Transaction = Transaction ?? Connection.BeginTransaction(isolationLevel);
         }
@@ -55,11 +74,41 @@ namespace NetModular.Lib.Data.Core
         /// </summary>
         public IDbConnection Open()
         {
-            if (Connection == null)
-                Connection = Options.OpenConnection();
+            //加个锁，防止并发时异常
+            lock (Lock)
+            {
+                if (Connection == null)
+                    Connection = Options.OpenConnection();
 
-            if (Connection.State != ConnectionState.Open)
-                Connection.Open();
+                if (Connection.State != ConnectionState.Open)
+                {
+                    Connection.Open();
+
+                    //SQLite跨数据库访问需要附加
+                    if (Options.SqlAdapter.SqlDialect == Abstractions.Enums.SqlDialect.SQLite)
+                    {
+                        var sql = new StringBuilder();
+                        foreach (var conn in Options.DbOptions.Connections)
+                        {
+                            var connString = "";
+                            foreach (var param in conn.ConnString.Split(';'))
+                            {
+                                var temp = param.Split('=');
+                                var key = temp[0];
+                                if (key.Equals("Data Source", StringComparison.OrdinalIgnoreCase) || key.Equals("DataSource", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    connString = temp[1];
+                                    break;
+                                }
+                            }
+
+                            sql.AppendFormat("ATTACH DATABASE '{0}' as '{1}';", connString, conn.Database);
+                        }
+
+                        Connection.ExecuteAsync(sql.ToString());
+                    }
+                }
+            }
 
             return Connection;
         }
@@ -73,8 +122,8 @@ namespace NetModular.Lib.Data.Core
 
         public void Dispose()
         {
-            Connection?.Dispose();
             Transaction?.Dispose();
+            Connection?.Dispose();
         }
     }
 }

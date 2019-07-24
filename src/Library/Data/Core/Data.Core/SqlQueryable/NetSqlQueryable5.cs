@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Entities;
-using NetModular.Lib.Data.Abstractions.Enums;
-using NetModular.Lib.Data.Abstractions.Pagination;
-using NetModular.Lib.Data.Abstractions.SqlQueryable;
-using NetModular.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable;
-using NetModular.Lib.Data.Core.Internal;
-using NetModular.Lib.Data.Core.SqlQueryable.GroupByQueryable;
-using NetModular.Lib.Data.Core.SqlQueryable.Internal;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Abstractions.Entities;
+using Nm.Lib.Data.Abstractions.Enums;
+using Nm.Lib.Data.Abstractions.Pagination;
+using Nm.Lib.Data.Abstractions.SqlQueryable;
+using Nm.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable;
+using Nm.Lib.Data.Core.Internal;
+using Nm.Lib.Data.Core.SqlQueryable.GroupByQueryable;
+using Nm.Lib.Data.Core.SqlQueryable.Internal;
 
-namespace NetModular.Lib.Data.Core.SqlQueryable
+namespace Nm.Lib.Data.Core.SqlQueryable
 {
     internal class NetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5>
         : NetSqlQueryableAbstract, INetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5>
@@ -138,30 +138,40 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
         {
             return base.AvgAsync<TResult>(expression);
         }
+        public IGroupByQueryable5<TResult, TEntity, TEntity2, TEntity3, TEntity4, TEntity5> GroupBy<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression)
+        {
+            return new GroupByQueryable5<TResult, TEntity, TEntity2, TEntity3, TEntity4, TEntity5>(Db, QueryBody, QueryBuilder, expression);
+        }
 
-        public IList<TEntity> ToList()
+
+        public new IList<TEntity> ToList()
         {
             return ToList<TEntity>();
         }
 
-        public Task<IList<TEntity>> ToListAsync()
+        public new Task<IList<TEntity>> ToListAsync()
         {
             return ToListAsync<TEntity>();
         }
 
-        public IList<TEntity> Pagination(Paging paging = null)
+        public new IList<TEntity> Pagination(Paging paging = null)
         {
             return Pagination<TEntity>(paging);
         }
 
-        public Task<IList<TEntity>> PaginationAsync(Paging paging = null)
+        public new Task<IList<TEntity>> PaginationAsync(Paging paging = null)
         {
             return PaginationAsync<TEntity>(paging);
         }
 
-        public IGroupByQueryable5<TResult, TEntity, TEntity2, TEntity3, TEntity4, TEntity5> GroupBy<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression)
+        public new TEntity First()
         {
-            return new GroupByQueryable5<TResult, TEntity, TEntity2, TEntity3, TEntity4, TEntity5>(Db, QueryBody, QueryBuilder, expression);
+            return First<TEntity>();
+        }
+
+        public new Task<TEntity> FirstAsync()
+        {
+            return FirstAsync<TEntity>();
         }
     }
 }

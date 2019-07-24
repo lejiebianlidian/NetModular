@@ -1,18 +1,19 @@
 ﻿using AutoMapper;
-using NetModular.Lib.Mapper.AutoMapper;
-using NetModular.Module.Admin.Application.MenuService.ResultModels;
-using NetModular.Module.Admin.Application.MenuService.ViewModels;
-using NetModular.Module.Admin.Domain.Menu;
+using Nm.Lib.Mapper.AutoMapper;
+using Nm.Module.Admin.Application.MenuService.ResultModels;
+using Nm.Module.Admin.Application.MenuService.ViewModels;
+using Nm.Module.Admin.Domain.Menu;
 
-namespace NetModular.Module.Admin.Application.MenuService
+namespace Nm.Module.Admin.Application.MenuService
 {
     public class MapperConfig : IMapperConfig
     {
         public void Bind(IMapperConfigurationExpression cfg)
         {
-            cfg.CreateMap<MenuAddModel, Menu>();
-            cfg.CreateMap<MenuUpdateModel, Menu>();
-            cfg.CreateMap<Menu, MenuTreeResultModel>();
+            cfg.CreateMap<MenuAddModel, MenuEntity>();
+            cfg.CreateMap<MenuEntity, MenuUpdateModel>();
+            cfg.CreateMap<MenuUpdateModel, MenuEntity>();
+            cfg.CreateMap<MenuEntity, MenuTreeResultModel>();
         }
     }
 }

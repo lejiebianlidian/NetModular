@@ -1,17 +1,23 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 
-namespace NetModular.Lib.Data.Abstractions
+namespace Nm.Lib.Data.Abstractions
 {
     /// <summary>
     /// 工作单元
     /// </summary>
-    public interface IUnitOfWork
+    public interface IUnitOfWork : IDisposable
     {
         /// <summary>
         /// 开启事务
         /// </summary>
+        void BeginTransaction();
+
+        /// <summary>
+        /// 开启事务
+        /// </summary>
         /// <param name="isolationLevel">隔离级别</param>
-        void BeginTransaction(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+        void BeginTransaction(IsolationLevel isolationLevel);
 
         /// <summary>
         /// 提交

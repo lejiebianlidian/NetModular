@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using NetModular.Module.Admin.Domain.Button;
+using Nm.Module.Admin.Domain.Button;
 
-namespace NetModular.Module.Admin.Application.ButtonService.ViewModels
+namespace Nm.Module.Admin.Application.ButtonService.ViewModels
 {
     public class ButtonSyncModel
     {
@@ -16,6 +16,6 @@ namespace NetModular.Module.Admin.Application.ButtonService.ViewModels
         /// <summary>
         /// 按钮列表
         /// </summary>
-        public List<Button> Buttons { get; set; }
+        public List<ButtonEntity> Buttons { get; set; }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NetModular.Lib.Utils.Core.Extensions
+namespace Nm.Lib.Utils.Core.Extensions
 {
     public static class StringExtensions
     {
@@ -34,6 +34,5 @@ namespace NetModular.Lib.Utils.Core.Extensions
         {
             return s.Equals(value, StringComparison.OrdinalIgnoreCase);
         }
-
     }
 }

@@ -9,7 +9,7 @@
     </template>
 
     <ul v-if="value&&value.length>0" class="nm-listbox-list">
-      <li class="nm-listbox-item" v-for="item in value" :key="item.value" :title="item.label">
+      <li class="nm-listbox-item" v-for="item in value_" :key="item.value" :title="item.label">
         <slot :item="item">
           <span class="nm-listbox-item-text">{{item.label}}</span>
           <nm-button class="nm-listbox-delete" circle type="danger" icon="delete" @click="remove(item.value)"/>
@@ -24,6 +24,7 @@ export default {
   name: 'Listbox',
   data () {
     return {
+      value_: this.value,
       resizeing: false
     }
   },
@@ -47,8 +48,9 @@ export default {
   },
   methods: {
     remove (v) {
-      this.value.splice(this.value.findIndex(item => item.value === v), 1)
-      this.$emit('input', this.value)
+      this.value_.splice(this.value_.findIndex(item => item.value === v), 1)
+      this.$emit('input', this.value_)
+      this.$emit('remove', v, this.value_)
     },
     scrollbarResize () {
       if (!this.resizeing) {
@@ -63,7 +65,8 @@ export default {
     }
   },
   watch: {
-    value () {
+    value (val) {
+      this.value_ = val
       this.scrollbarResize()
     }
   }

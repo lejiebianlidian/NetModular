@@ -1,4 +1,4 @@
-﻿namespace NetModular.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable
+﻿namespace Nm.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable
 {
     /// <summary>
     /// 分组查询对象
@@ -7,6 +7,6 @@
     {
         TKey Key { get; }
 
-        int Count();
+        long Count();
     }
 }

@@ -1,13 +1,6 @@
 <template>
   <nm-container :scrollbar="true">
-    <nm-query
-      :option="tableOption"
-      :page="page"
-      :condition="condition"
-      @query="query"
-      @rowButton="rowButton"
-      @button="topButton"
-    ></nm-query>
+    <nm-query :option="tableOption" :page="page" :condition="condition" @query="query" @rowButton="rowButton" @button="topButton"></nm-query>
   </nm-container>
 </template>
 <script>
@@ -16,19 +9,19 @@ export default {
   data () {
     return {
       tableOption:
-        {
+      {
 
-          search: [],
-          buttons: [], // 顶部button
-          coloumns: [],
-          rows: []
-        },
+        search: [],
+        buttons: [], // 顶部button
+        coloumns: [],
+        rows: []
+      },
       page:
-        {
-          index: 1, // 当前页
-          total: 200, // 数据总数
-          pageSize: 5 // 每页显示数量
-        },
+      {
+        index: 1, // 当前页
+        total: 200, // 数据总数
+        pageSize: 5 // 每页显示数量
+      },
       condition: { Province: '593f9c2ccf33985daebb1355' } // 条件
     }
   },
@@ -188,45 +181,43 @@ export default {
     this.getData()
   },
   methods:
-    {
-      query (val) {
-        this.getData()
-      },
-      rowButton (obj) {
-        console.log(obj)
-      },
-      topButton (obj) {
-        console.log(obj)
-      },
-      getData () {
-        let random = this.$random
-        var self = this
-        setTimeout(function () {
-          let o = {
-            'id|+1': ((self.page.index - 1) * self.page.pageSize + 1),
-            'name' () {
-              return random.cname()
-            },
-            'age|20-30': 0,
-            'sex|0-1': 0,
-            'address' () {
-              return random.county('@county(true)')
-            },
-            'zip' () {
-              return random.zip()
-            },
-            'operation':
-              [{ key: 'add', value: '新增' },
-                { key: 'eidt', value: '修改' },
-                { key: 'del', value: '删除' },
-                { key: 'select', value: '查看' }]
-          }
-          let p = {}
-          p['rows|' + self.page.pageSize] = [o]
-          self.tableOption.rows = self.$mock(p).rows
-        }, 200)
-      }
-
+  {
+    query (val) {
+      this.getData()
+    },
+    rowButton (obj) {
+    },
+    topButton (obj) {
+    },
+    getData () {
+      let random = this.$random
+      var self = this
+      setTimeout(function () {
+        let o = {
+          'id|+1': ((self.page.index - 1) * self.page.pageSize + 1),
+          'name' () {
+            return random.cname()
+          },
+          'age|20-30': 0,
+          'sex|0-1': 0,
+          'address' () {
+            return random.county('@county(true)')
+          },
+          'zip' () {
+            return random.zip()
+          },
+          'operation':
+            [{ key: 'add', value: '新增' },
+              { key: 'eidt', value: '修改' },
+              { key: 'del', value: '删除' },
+              { key: 'select', value: '查看' }]
+        }
+        let p = {}
+        p['rows|' + self.page.pageSize] = [o]
+        self.tableOption.rows = self.$mock(p).rows
+      }, 200)
     }
+
+  }
 }
 </script>

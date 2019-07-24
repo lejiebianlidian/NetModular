@@ -4,9 +4,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using Microsoft.Extensions.DependencyModel;
-using NetModular.Lib.Utils.Core.Attributes;
+using Nm.Lib.Utils.Core.Attributes;
 
-namespace NetModular.Lib.Utils.Core.Helpers
+namespace Nm.Lib.Utils.Core.Helpers
 {
     /// <summary>
     /// 程序集操作帮助类
@@ -18,12 +18,23 @@ namespace NetModular.Lib.Utils.Core.Helpers
         /// 加载程序集
         /// </summary>
         /// <returns></returns>
-        public List<Assembly> Load(Func<CompilationLibrary, bool> predicate = null)
+        public List<Assembly> Load(Func<RuntimeLibrary, bool> predicate = null)
         {
-            if (predicate == null)
-                return DependencyContext.Default.CompileLibraries.Select(m => AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(m.Name))).ToList();
+            var list = DependencyContext.Default.RuntimeLibraries.ToList();
+            if (predicate != null)
+                list = DependencyContext.Default.RuntimeLibraries.Where(predicate).ToList();
 
-            return DependencyContext.Default.CompileLibraries.Where(predicate).Select(m => AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(m.Name))).ToList();
+            return list.Select(m =>
+            {
+                try
+                {
+                    return AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(m.Name));
+                }
+                catch
+                {
+                    return null;
+                }
+            }).Where(m => m != null).ToList();
         }
 
         /// <summary>

@@ -1,18 +1,18 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using NetModular.Lib.Data.Abstractions.Options;
-using NetModular.Lib.Data.Core;
+using Nm.Lib.Auth.Abstractions;
+using Nm.Lib.Data.Abstractions.Options;
+using Nm.Lib.Data.Core;
 
-namespace NetModular.Lib.Data.SqlServer
+namespace Nm.Lib.Data.SqlServer
 {
     /// <summary>
     /// 数据库上下文配置项SqlServer实现
     /// </summary>
     public class SqlServerDbContextOptions : DbContextOptionsAbstract
     {
-        public SqlServerDbContextOptions(DbConnectionOptions options, ILoggerFactory loggerFactory, IHttpContextAccessor httpContextAccessor) : base(options, new SqlServerAdapter(options.Database), loggerFactory, httpContextAccessor)
+        public SqlServerDbContextOptions(DbOptions dbOptions, DbConnectionOptions options, ILoggerFactory loggerFactory, ILoginInfo loginInfo) : base(dbOptions, options, new SqlServerAdapter(options.Database), loggerFactory, loginInfo)
         {
         }
 

@@ -1,12 +1,10 @@
 ﻿using System.Data;
-using NetModular.Lib.Data.Abstractions;
+using Nm.Lib.Data.Abstractions;
 
-namespace NetModular.Lib.Data.Core
+namespace Nm.Lib.Data.Core
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private IDbTransaction _transaction;
-
         private readonly IDbContext _dbContext;
 
         public UnitOfWork(IDbContext dbContext)
@@ -14,29 +12,43 @@ namespace NetModular.Lib.Data.Core
             _dbContext = dbContext;
         }
 
-        public void BeginTransaction(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        public void BeginTransaction()
         {
-            _transaction = _dbContext.BeginTransaction(isolationLevel);
+            _dbContext.BeginTransaction();
+        }
+
+        public void BeginTransaction(IsolationLevel isolationLevel)
+        {
+            _dbContext.BeginTransaction(isolationLevel);
         }
 
         public void Commit()
         {
-            _transaction?.Commit();
-            _transaction = null;
-            _dbContext.Transaction = null;
+            if (_dbContext.Transaction != null)
+            {
+                _dbContext.Transaction.Commit();
+                _dbContext.Transaction = null;
+            }
         }
 
         public void Rollback()
         {
-            _transaction?.Rollback();
-            _transaction = null;
-            _dbContext.Transaction = null;
+            if (_dbContext.Transaction != null)
+            {
+                _dbContext.Transaction.Rollback();
+                _dbContext.Transaction = null;
+            }
         }
 
         public void Dispose()
         {
-            _transaction?.Dispose();
-            _dbContext.Connection.Close();
+            //如果不是null，则表示未提交或者出现异常，需要回滚
+            Rollback();
+
+            if (_dbContext.Connection != null && _dbContext.Connection.State != ConnectionState.Closed)
+            {
+                _dbContext.Connection.Close();
+            }
         }
     }
 

@@ -3,21 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Query;
-using NetModular.Lib.Utils.Core.Extensions;
-using NetModular.Lib.Utils.Core.Result;
-using NetModular.Module.Admin.Application.AccountService;
-using NetModular.Module.Admin.Application.RoleService.ResultModels;
-using NetModular.Module.Admin.Application.RoleService.ViewModels;
-using NetModular.Module.Admin.Domain.AccountRole;
-using NetModular.Module.Admin.Domain.Button;
-using NetModular.Module.Admin.Domain.Role;
-using NetModular.Module.Admin.Domain.RoleMenu;
-using NetModular.Module.Admin.Domain.RoleMenuButton;
-using NetModular.Module.Admin.Infrastructure.Repositories;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Utils.Core.Extensions;
+using Nm.Lib.Utils.Core.Result;
+using Nm.Module.Admin.Application.AccountService;
+using Nm.Module.Admin.Application.RoleService.ResultModels;
+using Nm.Module.Admin.Application.RoleService.ViewModels;
+using Nm.Module.Admin.Domain.AccountRole;
+using Nm.Module.Admin.Domain.Button;
+using Nm.Module.Admin.Domain.Role;
+using Nm.Module.Admin.Domain.Role.Models;
+using Nm.Module.Admin.Domain.RoleMenu;
+using Nm.Module.Admin.Domain.RoleMenuButton;
+using Nm.Module.Admin.Infrastructure.Repositories;
 
-namespace NetModular.Module.Admin.Application.RoleService
+namespace Nm.Module.Admin.Application.RoleService
 {
     public class RoleService : IRoleService
     {
@@ -44,10 +44,11 @@ namespace NetModular.Module.Admin.Application.RoleService
 
         public async Task<IResultModel> Query(RoleQueryModel model)
         {
-            var result = new QueryResultModel<Role>();
-            var paging = model.Paging();
-            result.Rows = await _repository.Query(paging, model.Name);
-            result.Total = paging.TotalCount;
+            var result = new QueryResultModel<RoleEntity>
+            {
+                Rows = await _repository.Query(model),
+                Total = model.TotalCount
+            };
             return ResultModel.Success(result);
         }
 
@@ -56,9 +57,9 @@ namespace NetModular.Module.Admin.Application.RoleService
             if (await _repository.Exists(model.Name))
                 return ResultModel.HasExists;
 
-            var moduleInfo = _mapper.Map<Role>(model);
+            var entity = _mapper.Map<RoleEntity>(model);
 
-            var result = await _repository.AddAsync(moduleInfo);
+            var result = await _repository.AddAsync(entity);
 
             return ResultModel.Result(result);
         }
@@ -73,7 +74,20 @@ namespace NetModular.Module.Admin.Application.RoleService
             if (exist)
                 return ResultModel.Failed("有账户绑定了该角色，请先删除对应绑定关系");
 
+            _uow.BeginTransaction();
             var result = await _repository.SoftDeleteAsync(id);
+            if (result)
+            {
+                result = await _roleMenuRepository.DeleteByRoleId(id);
+                if (result)
+                {
+                    result = await _roleMenuButtonRepository.DeleteByRole(id);
+                    if (result)
+                    {
+                        _uow.Commit();
+                    }
+                }
+            }
             return ResultModel.Result(result);
         }
 
@@ -116,10 +130,10 @@ namespace NetModular.Module.Admin.Application.RoleService
             if (!exists)
                 return ResultModel.NotExists;
 
-            List<RoleMenu> entityList = null;
+            List<RoleMenuEntity> entityList = null;
             if (model.Menus != null && model.Menus.Any())
             {
-                entityList = model.Menus.Select(m => new RoleMenu { RoleId = model.Id, MenuId = m }).ToList();
+                entityList = model.Menus.Select(m => new RoleMenuEntity { RoleId = model.Id, MenuId = m }).ToList();
             }
 
             /*
@@ -181,7 +195,7 @@ namespace NetModular.Module.Admin.Application.RoleService
             {
                 #region ==单个按钮==
 
-                var entity = _mapper.Map<RoleMenuButton>(model);
+                var entity = _mapper.Map<RoleMenuButtonEntity>(model);
                 //如果已存在
                 if (await _roleMenuButtonRepository.Exists(entity))
                 {
@@ -219,7 +233,7 @@ namespace NetModular.Module.Admin.Application.RoleService
                 if (model.Checked)
                 {
                     var buttons = await _buttonRepository.QueryByMenu(model.MenuId);
-                    var entities = buttons.Select(m => new RoleMenuButton
+                    var entities = buttons.Select(m => new RoleMenuButtonEntity
                     {
                         RoleId = model.RoleId,
                         MenuId = model.MenuId,

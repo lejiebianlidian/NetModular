@@ -37,6 +37,7 @@
 </template>
 
 <script>
+// 从iView迁移
 import { mapState } from 'vuex'
 import Trigger from './trigger.vue'
 export default {

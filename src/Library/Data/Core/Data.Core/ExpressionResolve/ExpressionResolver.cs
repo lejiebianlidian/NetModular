@@ -5,19 +5,19 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Enums;
-using NetModular.Lib.Data.Core.Internal;
-using NetModular.Lib.Data.Core.SqlQueryable.Internal;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Abstractions.Enums;
+using Nm.Lib.Data.Core.Internal;
+using Nm.Lib.Data.Core.SqlQueryable.Internal;
 
-namespace NetModular.Lib.Data.Core.ExpressionResolve
+namespace Nm.Lib.Data.Core.ExpressionResolve
 {
     internal class ExpressionResolver
     {
         private readonly ISqlAdapter _sqlAdapter;
         private readonly QueryBody _queryBody;
         private LambdaExpression _fullExpression;
-        private QueryParameters _parameters;
+        private IQueryParameters _parameters;
         private StringBuilder _sqlBuilder;
 
         public ExpressionResolver(ISqlAdapter sqlAdapter, QueryBody queryBody)
@@ -26,7 +26,7 @@ namespace NetModular.Lib.Data.Core.ExpressionResolve
             _queryBody = queryBody;
         }
 
-        public string Resolve(LambdaExpression expression, QueryParameters parameters)
+        public string Resolve(LambdaExpression expression, IQueryParameters parameters)
         {
             if (expression == null)
                 return string.Empty;
@@ -36,13 +36,6 @@ namespace NetModular.Lib.Data.Core.ExpressionResolve
             _sqlBuilder = new StringBuilder();
 
             Resolve(_fullExpression);
-
-            //删除多余的括号
-            if (_sqlBuilder.Length > 1 && _sqlBuilder[0] == '(' && _sqlBuilder[_sqlBuilder.Length - 1] == ')')
-            {
-                _sqlBuilder.Remove(0, 1);
-                _sqlBuilder.Remove(_sqlBuilder.Length - 1, 1);
-            }
 
             return _sqlBuilder.ToString();
         }
@@ -663,6 +656,10 @@ namespace NetModular.Lib.Data.Core.ExpressionResolve
                 else if (arg.NodeType == ExpressionType.MemberAccess)
                 {
                     MemberAccessResolve(arg);
+                }
+                else if (arg.NodeType == ExpressionType.Convert)
+                {
+                    UnaryResolve(arg);
                 }
                 else
                 {

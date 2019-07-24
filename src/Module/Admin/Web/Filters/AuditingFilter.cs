@@ -4,14 +4,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Options;
-using NetModular.Lib.Auth.Abstractions;
-using NetModular.Lib.Module.Abstractions.Attributes;
-using NetModular.Lib.Utils.Core.Enums;
-using NetModular.Module.Admin.Application.AuditInfoService;
-using NetModular.Module.Admin.Domain.AuditInfo;
 using Newtonsoft.Json;
+using Nm.Lib.Auth.Abstractions;
+using Nm.Lib.Module.AspNetCore.Attributes;
+using Nm.Lib.Utils.Core.Extensions;
+using Nm.Lib.Utils.Mvc.Helpers;
+using Nm.Module.Admin.Application.AuditInfoService;
+using Nm.Module.Admin.Application.SystemService;
+using Nm.Module.Admin.Domain.AuditInfo;
+using Nm.Module.Admin.Infrastructure.Options;
 
-namespace NetModular.Module.Admin.Web.Filters
+namespace Nm.Module.Admin.Web.Filters
 {
     /// <summary>
     /// 审计过滤器
@@ -19,19 +22,24 @@ namespace NetModular.Module.Admin.Web.Filters
     public class AuditingFilter : IAsyncActionFilter
     {
         private readonly AdminOptions _options;
-        private readonly LoginInfo _loginInfo;
+        private readonly ILoginInfo _loginInfo;
         private readonly IAuditInfoService _auditInfoService;
+        private readonly ISystemService _systemService;
+        private readonly MvcHelper _mvcHelper;
 
-        public AuditingFilter(IOptionsMonitor<AdminOptions> optionsAccessor, IAuditInfoService auditInfoService, LoginInfo loginInfo)
+        public AuditingFilter(IOptionsMonitor<AdminOptions> optionsAccessor, IAuditInfoService auditInfoService, ILoginInfo loginInfo, ISystemService systemService, MvcHelper mvcHelper)
         {
             _options = optionsAccessor.CurrentValue;
             _auditInfoService = auditInfoService;
             _loginInfo = loginInfo;
+            _systemService = systemService;
+            _mvcHelper = mvcHelper;
         }
 
         public Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            if (!_options.Auditing || CheckDisabled(context))
+            var cfg = _systemService.GetConfig().Result;
+            if (!cfg.Data.Auditing || !_options.Auditing || CheckDisabled(context))
             {
                 return next();
             }
@@ -64,13 +72,13 @@ namespace NetModular.Module.Admin.Web.Filters
             await _auditInfoService.Add(auditInfo);
         }
 
-        private AuditInfo CreateAuditInfo(ActionExecutingContext context)
+        private AuditInfoEntity CreateAuditInfo(ActionExecutingContext context)
         {
             var routeValues = context.ActionDescriptor.RouteValues;
-            var auditInfo = new AuditInfo
+            var auditInfo = new AuditInfoEntity
             {
                 AccountId = _loginInfo.AccountId,
-                Area = routeValues["area"],
+                Area = routeValues["area"] ?? "",
                 Controller = routeValues["controller"],
                 Action = routeValues["action"],
                 Parameters = JsonConvert.SerializeObject(context.ActionArguments),
@@ -78,6 +86,20 @@ namespace NetModular.Module.Admin.Web.Filters
                 IP = _loginInfo.IP,
                 ExecutionTime = DateTime.Now
             };
+
+            var controllerDescriptor = _mvcHelper.GetAllController().FirstOrDefault(m =>
+                m.Area.EqualsIgnoreCase(auditInfo.Area) && m.Name.EqualsIgnoreCase(auditInfo.Controller));
+            if (controllerDescriptor != null)
+            {
+                auditInfo.ControllerDesc = controllerDescriptor.Description;
+
+                var actionDescription = _mvcHelper.GetAllAction().FirstOrDefault(m =>
+                    m.Controller == controllerDescriptor && m.Name.EqualsIgnoreCase(auditInfo.Action));
+                if (actionDescription != null)
+                {
+                    auditInfo.ActionDesc = actionDescription.Description;
+                }
+            }
 
             //记录浏览器UA
             if (_loginInfo.Platform == Platform.Web)

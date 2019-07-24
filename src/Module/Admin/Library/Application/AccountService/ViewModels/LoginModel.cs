@@ -1,7 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using NetModular.Lib.Utils.Core.Enums;
+using Newtonsoft.Json;
+using Nm.Lib.Auth.Abstractions;
 
-namespace NetModular.Module.Admin.Application.AccountService.ViewModels
+namespace Nm.Module.Admin.Application.AccountService.ViewModels
 {
     /// <summary>
     /// 登录模型
@@ -33,12 +34,12 @@ namespace NetModular.Module.Admin.Application.AccountService.ViewModels
         /// <summary>
         /// 验证码
         /// </summary>
-        [Required(ErrorMessage = "请输入验证码")]
         public string Code { get; set; }
 
         /// <summary>
-        /// 回调地址
+        /// IP地址
         /// </summary>
-        public string ReturlUrl { get; set; }
+        [JsonIgnore]
+        public string IP { get; set; }
     }
 }

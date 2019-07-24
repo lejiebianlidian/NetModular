@@ -1,6 +1,7 @@
 ﻿using System;
+using Nm.Lib.Data.Abstractions.Attributes;
 
-namespace NetModular.Lib.Data.Core.Entities.Extend
+namespace Nm.Lib.Data.Core.Entities.Extend
 {
     public class EntityBaseWithSoftDelete<TKey, TDeletedByKey> : EntityWithSoftDelete<TKey, TDeletedByKey>
     {
@@ -23,6 +24,18 @@ namespace NetModular.Lib.Data.Core.Entities.Extend
         /// 修改人
         /// </summary>
         public Guid ModifiedBy { get; set; }
+
+        /// <summary>
+        /// 创建人名称
+        /// </summary>
+        [Ignore]
+        public string Creator { get; set; }
+
+        /// <summary>
+        /// 修改人
+        /// </summary>
+        [Ignore]
+        public string Modifier { get; set; }
     }
 
     /// <summary>

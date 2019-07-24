@@ -1,15 +1,24 @@
 ﻿using System;
 using System.Security.Cryptography;
 
-namespace NetModular.Lib.Data.Core.Internal
+namespace Nm.Lib.Data.Core.Internal
 {
     /// <summary>
     /// 有序Guid类型
     /// </summary>
     public enum SequentialGuidType
     {
+        /// <summary>
+        /// MySQL、PostgreSQL、SQLite使用
+        /// </summary>
         SequentialAsString,
+        /// <summary>
+        /// Oracle使用
+        /// </summary>
         SequentialAsBinary,
+        /// <summary>
+        /// SQL Server使用
+        /// </summary>
         SequentialAtEnd
     }
 

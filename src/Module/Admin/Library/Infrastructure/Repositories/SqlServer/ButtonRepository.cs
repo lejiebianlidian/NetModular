@@ -1,28 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Pagination;
-using NetModular.Lib.Data.Core;
-using NetModular.Lib.Utils.Core.Extensions;
-using NetModular.Module.Admin.Domain.Account;
-using NetModular.Module.Admin.Domain.AccountRole;
-using NetModular.Module.Admin.Domain.Button;
-using NetModular.Module.Admin.Domain.RoleMenuButton;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Core;
+using Nm.Lib.Data.Query;
+using Nm.Lib.Utils.Core.Extensions;
+using Nm.Module.Admin.Domain.Account;
+using Nm.Module.Admin.Domain.AccountRole;
+using Nm.Module.Admin.Domain.Button;
+using Nm.Module.Admin.Domain.Button.Models;
+using Nm.Module.Admin.Domain.RoleMenuButton;
 
-namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
+namespace Nm.Module.Admin.Infrastructure.Repositories.SqlServer
 {
-    public class ButtonRepository : RepositoryAbstract<Button>, IButtonRepository
+    public class ButtonRepository : RepositoryAbstract<ButtonEntity>, IButtonRepository
     {
         public ButtonRepository(IDbContext context) : base(context)
         {
         }
 
-        public Task<IList<Button>> Query(Paging paging, Guid menuId, string name = null)
+        public async Task<IList<ButtonEntity>> Query(ButtonQueryModel model)
         {
-            var query = Db.Find(m => m.MenuId == menuId).WhereIf(name.NotNull(), m => m.Name.Contains(name));
-            return query.LeftJoin<Account>((x, y) => x.CreatedBy == y.Id).Select((x, y) => new { x, Creator = y.Name })
+            var paging = model.Paging();
+
+            var query = Db.Find(m => m.MenuId == model.MenuId)
+                .WhereIf(model.Name.NotNull(), m => m.Name.Contains(model.Name));
+
+            var list = await query.LeftJoin<AccountEntity>((x, y) => x.CreatedBy == y.Id)
+                .Select((x, y) => new { x, Creator = y.Name })
                 .PaginationAsync(paging);
+            model.TotalCount = paging.TotalCount;
+            return list;
         }
 
         public Task<bool> Exists(string code, Guid? id = null)
@@ -32,7 +40,7 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
             return query.ExistsAsync();
         }
 
-        public Task<IList<Button>> QueryByMenu(Guid menuId)
+        public Task<IList<ButtonEntity>> QueryByMenu(Guid menuId)
         {
             return Db.Find(m => m.MenuId == menuId).ToListAsync();
         }
@@ -40,8 +48,8 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
         public Task<IList<string>> QueryCodeByAccount(Guid accountId)
         {
             return Db.Find()
-                .InnerJoin<RoleMenuButton>((x, y) => x.Id == y.ButtonId)
-                .InnerJoin<AccountRole>((x, y, z) => y.RoleId == z.RoleId && z.AccountId == accountId)
+                .InnerJoin<RoleMenuButtonEntity>((x, y) => x.Id == y.ButtonId)
+                .InnerJoin<AccountRoleEntity>((x, y, z) => y.RoleId == z.RoleId && z.AccountId == accountId)
                 .Select((x, y, z) => x.Code)
                 .ToListAsync<string>();
         }
@@ -51,10 +59,10 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
             return Db.Find(m => m.MenuId == menuId).DeleteAsync();
         }
 
-        public Task<bool> UpdateForSync(Button button)
+        public Task<bool> UpdateForSync(ButtonEntity button)
         {
             return Db.Find(m => m.MenuId == button.MenuId && m.Code == button.Code)
-                .UpdateAsync(m => new Button { Icon = button.Icon, Name = button.Name });
+                .UpdateAsync(m => new ButtonEntity { Icon = button.Icon, Name = button.Name });
         }
     }
 }

@@ -7,28 +7,29 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Options;
-using NetModular.Lib.Auth.Abstractions.Attributes;
-using NetModular.Lib.Module.Abstractions.Attributes;
-using NetModular.Lib.Utils.Core.Extensions;
-using NetModular.Lib.Utils.Core.Result;
-using NetModular.Lib.Utils.Mvc.Extensions;
-using NetModular.Lib.Utils.Mvc.Helpers;
-using NetModular.Module.Admin.Application.SystemService;
-using NetModular.Module.Admin.Application.SystemService.ViewModels;
-using NetModular.Module.Admin.Web.Core;
+using Nm.Lib.Auth.Web.Attributes;
+using Nm.Lib.Module.AspNetCore.Attributes;
+using Nm.Lib.Utils.Core.Extensions;
+using Nm.Lib.Utils.Core.Options;
+using Nm.Lib.Utils.Core.Result;
+using Nm.Lib.Utils.Mvc.Extensions;
+using Nm.Lib.Utils.Mvc.Helpers;
+using Nm.Module.Admin.Application.SystemService;
+using Nm.Module.Admin.Application.SystemService.ViewModels;
+using Nm.Module.Admin.Web.Core;
 
-namespace NetModular.Module.Admin.Web.Controllers
+namespace Nm.Module.Admin.Web.Controllers
 {
     [Description("系统")]
     public class SystemController : ModuleController
     {
-        private readonly AdminOptions _options;
+        private readonly ModuleCommonOptions _options;
         private readonly ISystemService _systemService;
         private readonly FileUploadHelper _fileUploadHelper;
         private readonly PermissionHelper _permissionHelper;
         private readonly MvcHelper _mvcHelper;
 
-        public SystemController(ISystemService systemService, IOptionsMonitor<AdminOptions> optionsMonitor, FileUploadHelper fileUploadHelper, PermissionHelper permissionHelper, MvcHelper mvcHelper)
+        public SystemController(ISystemService systemService, IOptionsMonitor<ModuleCommonOptions> optionsMonitor, FileUploadHelper fileUploadHelper, PermissionHelper permissionHelper, MvcHelper mvcHelper)
         {
             _systemService = systemService;
             _fileUploadHelper = fileUploadHelper;
@@ -41,7 +42,7 @@ namespace NetModular.Module.Admin.Web.Controllers
         [AllowAnonymous]
         [DisableAuditing]
         [Description("获取系统配置信息")]
-        public Task<IResultModel> Config()
+        public Task<IResultModel<SystemConfigModel>> Config()
         {
             return _systemService.GetConfig(Request.GetHost());
         }
@@ -61,8 +62,9 @@ namespace NetModular.Module.Admin.Web.Controllers
             {
                 Request = Request,
                 FormFile = formFile,
-                Group = "Logo",
-                RootPath = _options.UploadPath
+                RootPath = _options.UploadPath,
+                Module = "Admin",
+                Group = "Logo"
             };
 
             var result = await _fileUploadHelper.Upload(model);
@@ -71,7 +73,7 @@ namespace NetModular.Module.Admin.Web.Controllers
             {
                 var file = result.Data;
 
-                file.Url = new Uri(Request.GetHost($"/upload/admin/{file.Path}")).ToString().ToLower();
+                file.Url = new Uri(Request.GetHost($"/upload/{file.FullPath.ToLower()}")).ToString().ToLower();
 
                 return ResultModel.Success(file);
             }
@@ -95,7 +97,7 @@ namespace NetModular.Module.Admin.Web.Controllers
         [Description("获取指定模块的Controller下拉列表")]
         public IResultModel AllController([BindRequired]string module)
         {
-            var list = _mvcHelper.GetAllController().Where(m => m.Area.EqualsIgnoreCase(module)).Select(m => new OptionResultModel
+            var list = _mvcHelper.GetAllController().Where(m => m.Area.NotNull() && m.Area.EqualsIgnoreCase(module)).Select(m => new OptionResultModel
             {
                 Label = m.Description,
                 Value = m.Name
@@ -109,7 +111,8 @@ namespace NetModular.Module.Admin.Web.Controllers
         public IResultModel AllAction([BindRequired]string module, [BindRequired]string controller)
         {
             var list = _mvcHelper.GetAllAction().Where(m =>
-                m.Controller.Area.EqualsIgnoreCase(module)
+                m.Controller.Area.NotNull()
+                && m.Controller.Area.EqualsIgnoreCase(module)
                 && m.Controller.Name.EqualsIgnoreCase(controller)
                 && !m.MethodInfo.CustomAttributes.Any(n => n.AttributeType == typeof(AllowAnonymousAttribute) || n.AttributeType == typeof(CommonAttribute)))
                 .Select(m => new OptionResultModel

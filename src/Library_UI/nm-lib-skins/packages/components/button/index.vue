@@ -12,7 +12,7 @@
     :native-type="nativeType"
     @click="$emit('click')"
   >
-    <nm-icon v-if="icon" :name="icon"/>
+    <nm-icon v-if="!loading&&icon" :name="icon"/>
     <slot>
       <span v-if="!circle&&text" class="nm-button-text" v-html="text"/>
     </slot>

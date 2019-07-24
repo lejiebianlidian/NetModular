@@ -2,42 +2,50 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Pagination;
-using NetModular.Lib.Data.Core;
-using NetModular.Lib.Utils.Core.Extensions;
-using NetModular.Module.Admin.Domain.Account;
-using NetModular.Module.Admin.Domain.AccountRole;
-using NetModular.Module.Admin.Domain.Menu;
-using NetModular.Module.Admin.Domain.RoleMenu;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Core;
+using Nm.Lib.Data.Query;
+using Nm.Lib.Utils.Core.Extensions;
+using Nm.Module.Admin.Domain.Account;
+using Nm.Module.Admin.Domain.AccountRole;
+using Nm.Module.Admin.Domain.Menu;
+using Nm.Module.Admin.Domain.Menu.Models;
+using Nm.Module.Admin.Domain.RoleMenu;
 
-namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
+namespace Nm.Module.Admin.Infrastructure.Repositories.SqlServer
 {
-    public class MenuRepository : RepositoryAbstract<Menu>, IMenuRepository
+    public class MenuRepository : RepositoryAbstract<MenuEntity>, IMenuRepository
     {
         public MenuRepository(IDbContext dbContext) : base(dbContext)
         {
         }
 
-        public Task<IList<Menu>> Query(Paging paging, string name = null, string code = null, Guid? parentId = null)
+        public async Task<IList<MenuEntity>> Query(MenuQueryModel model)
         {
-            var query = Db.Find().LeftJoin<Account>((x, y) => x.CreatedBy == y.Id);
+            var paging = model.Paging();
+            var query = Db.Find();
+            query.WhereIf(model.Name.NotNull(), m => m.Name.Contains(model.Name));
+            query.WhereIf(model.RouteName.NotNull(), m => m.RouteName.Contains(model.RouteName));
 
-            query.WhereIf(name.NotNull(), (x, y) => x.Name.Contains(name));
-            query.WhereIf(code.NotNull(), (x, y) => x.RouteName.Contains(code));
-
-            if (parentId == null)
-                parentId = Guid.Empty;
-            query.Where((x, y) => x.ParentId == parentId);
+            if (model.ParentId == null)
+                model.ParentId = Guid.Empty;
+            query.Where(m => m.ParentId == model.ParentId);
 
             if (!paging.OrderBy.Any())
             {
-                query.OrderBy((x, y) => x.Sort);
+                query.OrderBy(m => m.Sort);
             }
 
-            query.Select((x, y) => new { x, CreatorName = y.Name });
+            var list = await query.LeftJoin<AccountEntity>((x, y) => x.CreatedBy == y.Id)
+                .Select((x, y) => new { x, CreatorName = y.Name })
+                .PaginationAsync(paging);
+            model.TotalCount = paging.TotalCount;
+            return list;
+        }
 
-            return query.PaginationAsync(paging);
+        public Task<IList<MenuEntity>> QueryChildren(Guid parentId)
+        {
+            return Db.Find(m => m.ParentId == parentId).OrderBy(m => m.Sort).ToListAsync();
         }
 
         public Task<bool> ExistsChild(Guid id)
@@ -55,20 +63,20 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
             return ExistsAsync(e => e.ModuleCode == moduleCode);
         }
 
-        public Task<Menu> GetAsync(Guid id)
+        public Task<MenuEntity> GetAsync(Guid id)
         {
-            var query = Db.Find().LeftJoin<Menu>((x, y) => x.ParentId == y.Id)
-                .LeftJoin<Account>((x, y, z) => x.CreatedBy == z.Id)
+            var query = Db.Find().LeftJoin<MenuEntity>((x, y) => x.ParentId == y.Id)
+                .LeftJoin<AccountEntity>((x, y, z) => x.CreatedBy == z.Id)
                 .Where((x, y, z) => x.Id == id)
                 .Select((m, n, o) => new { m, ParentName = n.Name, });
 
-            return query.FirstAsync<Menu>();
+            return query.FirstAsync<MenuEntity>();
         }
 
-        public Task<IList<Menu>> GetByAccount(Guid accountId)
+        public Task<IList<MenuEntity>> GetByAccount(Guid accountId)
         {
-            return Db.Find().InnerJoin<RoleMenu>((x, y) => x.Id == y.MenuId)
-                 .InnerJoin<AccountRole>((x, y, z) => y.RoleId == z.RoleId && z.AccountId == accountId)
+            return Db.Find().InnerJoin<RoleMenuEntity>((x, y) => x.Id == y.MenuId)
+                 .InnerJoin<AccountRoleEntity>((x, y, z) => y.RoleId == z.RoleId && z.AccountId == accountId)
                  .Select((x, y, z) => new { x })
                  .ToListAsync();
         }

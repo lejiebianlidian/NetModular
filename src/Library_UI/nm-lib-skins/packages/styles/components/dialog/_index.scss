@@ -43,6 +43,10 @@
                         color: $text-color1;
                         transform: scale(1.2);
                     }
+
+                    #{$prefix}-icon {
+                        transform: scale(1) !important;
+                    }
                 }
             }
         }
@@ -67,14 +71,6 @@
                         position: absolute;
                         height: 100%;
                         width: 100%;
-
-                        >#{$prefix}-scrollbar {
-                            >.el-scrollbar__wrap {
-                                >.el-scrollbar__view {
-                                    padding: 10px 0;
-                                }
-                            }
-                        }
                     }
                 }
 
@@ -82,6 +78,7 @@
                     padding: $dialog-footer-padding;
                     flex-shrink: 0;
                     text-align: right;
+                    z-index: 1;
                 }
             }
         }
@@ -109,12 +106,17 @@
 
     }
 
-    // 拖拽模式
     &.draggable {
-        >.el-dialog {
-            margin: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
+        bottom: auto !important;
+        right: auto !important;
+
+        #{$prefix}-dialog-title {
+            cursor: move;
+            user-select: none;
+        }
+
+        .el-dialog {
+            position: fixed;
         }
     }
 
@@ -128,9 +130,4 @@
             }
         }
     }
-}
-
-#{$prefix}-dialog-resizable-handle {
-    position: absolute;
-    z-index: 90;
 }

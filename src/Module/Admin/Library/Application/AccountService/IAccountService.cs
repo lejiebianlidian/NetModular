@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NetModular.Lib.Utils.Core.Result;
-using NetModular.Module.Admin.Application.AccountService.ViewModels;
-using NetModular.Module.Admin.Domain.Account;
-using NetModular.Module.Admin.Domain.Permission;
+using Nm.Lib.Utils.Core.Result;
+using Nm.Module.Admin.Application.AccountService.ViewModels;
+using Nm.Module.Admin.Domain.Account;
+using Nm.Module.Admin.Domain.Account.Models;
+using Nm.Module.Admin.Domain.Permission;
 
-namespace NetModular.Module.Admin.Application.AccountService
+namespace Nm.Module.Admin.Application.AccountService
 {
     /// <summary>
     /// 账户服务
@@ -25,13 +26,13 @@ namespace NetModular.Module.Admin.Application.AccountService
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task<ResultModel<Account>> Login(LoginModel model);
+        Task<ResultModel<AccountEntity>> Login(LoginModel model);
 
         /// <summary>
         /// 获取登录信息
         /// </summary>
         /// <returns></returns>
-        Task<IResultModel> LoginInfo();
+        Task<IResultModel> LoginInfo(Guid accountId);
 
         /// <summary>
         /// 修改密码
@@ -58,7 +59,7 @@ namespace NetModular.Module.Admin.Application.AccountService
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task<IResultModel> Add(AccountAddModel model);
+        Task<IResultModel<Guid>> Add(AccountAddModel model);
 
         /// <summary>
         /// 编辑
@@ -78,8 +79,9 @@ namespace NetModular.Module.Admin.Application.AccountService
         /// 删除
         /// </summary>
         /// <param name="id"></param>
+        /// <param name="deleter">删除人</param>
         /// <returns></returns>
-        Task<IResultModel> Delete(Guid id);
+        Task<IResultModel> Delete(Guid id,Guid deleter);
 
         /// <summary>
         /// 重置密码
@@ -92,11 +94,19 @@ namespace NetModular.Module.Admin.Application.AccountService
         /// 查询指定账户的权限列表
         /// </summary>
         /// <returns></returns>
-        Task<List<Permission>> QueryPermissionList(Guid id);
+        Task<List<PermissionEntity>> QueryPermissionList(Guid id);
 
         /// <summary>
         /// 清除指定账户的缓存数据
         /// </summary>
         void ClearPermissionListCache(Guid id);
+
+        /// <summary>
+        /// 密码加密
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        string EncryptPassword(string userName, string password);
     }
 }

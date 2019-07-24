@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using NetModular.Module.Admin.Domain.Permission;
+using Nm.Module.Admin.Domain.Permission;
 
-namespace NetModular.Module.Admin.Application.SystemService.ViewModels
+namespace Nm.Module.Admin.Application.SystemService.ViewModels
 {
     public class SystemInstallModel
     {
-        public List<Permission> Permissions { get; set; }
+        public List<PermissionEntity> Permissions { get; set; }
     }
 }

@@ -1,9 +1,9 @@
 <template>
   <nm-box header class="nm-checkbox-group">
     <template v-slot:header>
-      <el-checkbox :indeterminate="isIndeterminate" :disabled="disabledCheckAll" v-model="checkAll" @change="onCheckAllChange" :size="fontSize">全选</el-checkbox>
+      <el-checkbox v-model="checkAll" :size="size_" :indeterminate="isIndeterminate" :disabled="disabledCheckAll" @change="onCheckAllChange">全选</el-checkbox>
     </template>
-    <el-checkbox-group v-model="value_" :size="fontSize">
+    <el-checkbox-group v-model="value_" :size="size_">
       <el-checkbox v-for="item in options" :key="item.value" :label="item.value" :disabled="item.disabled" :border="border">
         <slot :option="item">{{ item.label }}</slot>
       </el-checkbox>
@@ -57,6 +57,9 @@ export default {
       }
 
       return list
+    },
+    size_ () {
+      return this.size || this.fontSize
     }
   },
   methods: {

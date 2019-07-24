@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
-namespace NetModular.Lib.Utils.Core.Result
+namespace Nm.Lib.Utils.Core.Result
 {
     /// <summary>
     /// 查询结果模型
@@ -17,5 +18,11 @@ namespace NetModular.Lib.Utils.Core.Result
         /// 数据集
         /// </summary>
         public IList<T> Rows { get; set; }
+
+        /// <summary>
+        /// 其他数据
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public object Data { get; set; }
     }
 }

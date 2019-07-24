@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Core;
-using NetModular.Module.Admin.Domain.Button;
-using NetModular.Module.Admin.Domain.RoleMenuButton;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Core;
+using Nm.Module.Admin.Domain.Button;
+using Nm.Module.Admin.Domain.RoleMenuButton;
 
-namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
+namespace Nm.Module.Admin.Infrastructure.Repositories.SqlServer
 {
-    public class RoleMenuButtonRepository : RepositoryAbstract<RoleMenuButton>, IRoleMenuButtonRepository
+    public class RoleMenuButtonRepository : RepositoryAbstract<RoleMenuButtonEntity>, IRoleMenuButtonRepository
     {
         public RoleMenuButtonRepository(IDbContext context) : base(context)
         {
@@ -29,22 +29,22 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
             return Db.Find(m => m.ButtonId == buttonId).DeleteAsync();
         }
 
-        public Task<IList<Button>> Query(Guid roleId, Guid menuId)
+        public virtual Task<IList<ButtonEntity>> Query(Guid roleId, Guid menuId)
         {
             return Db.Find()
-                .RightJoin<Button>((x, y) => x.ButtonId == y.Id && x.RoleId == roleId)
+                .RightJoin<ButtonEntity>((x, y) => x.ButtonId == y.Id && x.RoleId == roleId)
                 .Where((x, y) => y.MenuId == menuId)
                 .Select((x, y) => new { x.RoleId, y })
-                .ToListAsync<Button>();
+                .ToListAsync<ButtonEntity>();
         }
 
-        public Task<bool> Exists(RoleMenuButton entity)
+        public Task<bool> Exists(RoleMenuButtonEntity entity)
         {
             return Db.Find(m => m.RoleId == entity.RoleId && m.MenuId == entity.MenuId && m.ButtonId == entity.ButtonId)
                 .ExistsAsync();
         }
 
-        public Task<bool> Delete(RoleMenuButton entity)
+        public Task<bool> Delete(RoleMenuButtonEntity entity)
         {
             return Db.Find(m => m.RoleId == entity.RoleId && m.MenuId == entity.MenuId && m.ButtonId == entity.ButtonId)
                 .DeleteAsync();

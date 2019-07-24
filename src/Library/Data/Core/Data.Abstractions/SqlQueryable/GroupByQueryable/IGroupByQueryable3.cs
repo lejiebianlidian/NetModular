@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions.Entities;
+using Nm.Lib.Data.Abstractions.Entities;
 
-namespace NetModular.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable
+namespace Nm.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable
 {
     /// <summary>
     /// 分组查询
@@ -56,9 +54,5 @@ namespace NetModular.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable
         /// <param name="expression"></param>
         /// <returns></returns>
         IGroupByQueryable3<TKey, TEntity, TEntity2, TEntity3> Select<TResult>(Expression<Func<INetSqlGrouping3<TKey, TEntity, TEntity2, TEntity3>, TResult>> expression);
-
-        IList<TEntity> ToList();
-
-        Task<IList<TEntity>> ToListAsync();
     }
 }

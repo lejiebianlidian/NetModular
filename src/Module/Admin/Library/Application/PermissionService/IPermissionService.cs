@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NetModular.Lib.Utils.Core.Result;
-using NetModular.Module.Admin.Application.PermissionService.ViewModels;
-using NetModular.Module.Admin.Domain.Permission;
+using Nm.Lib.Utils.Core.Result;
+using Nm.Module.Admin.Domain.Permission;
+using Nm.Module.Admin.Domain.Permission.Models;
 
-namespace NetModular.Module.Admin.Application.PermissionService
+namespace Nm.Module.Admin.Application.PermissionService
 {
     /// <summary>
     /// 权限服务
@@ -23,7 +23,7 @@ namespace NetModular.Module.Admin.Application.PermissionService
         /// 同步
         /// </summary>
         /// <returns></returns>
-        Task<IResultModel> Sync(List<Permission> permissions);
+        Task<IResultModel> Sync(List<PermissionEntity> permissions);
 
         /// <summary>
         /// 删除

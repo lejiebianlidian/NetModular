@@ -26,10 +26,7 @@ export default {
   },
   props: {
     value: String,
-    placeholder: {
-      type: String,
-      default: '请选择图标'
-    }
+    placeholder: String
   },
   methods: {
     onChange (val) {

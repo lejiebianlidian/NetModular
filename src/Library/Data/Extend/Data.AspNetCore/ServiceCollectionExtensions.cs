@@ -2,19 +2,19 @@
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Entities;
-using NetModular.Lib.Data.Abstractions.Options;
-using NetModular.Lib.Data.Core;
-using NetModular.Lib.Module.Abstractions;
-using NetModular.Lib.Utils.Core.Extensions;
-using NetModular.Lib.Utils.Core.Helpers;
+using Nm.Lib.Auth.Abstractions;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Abstractions.Entities;
+using Nm.Lib.Data.Abstractions.Options;
+using Nm.Lib.Data.Core;
+using Nm.Lib.Module.Abstractions;
+using Nm.Lib.Utils.Core;
+using Nm.Lib.Utils.Core.Extensions;
+using Nm.Lib.Utils.Core.Helpers;
 
-namespace NetModular.Lib.Data.AspNetCore
+namespace Nm.Lib.Data.AspNetCore
 {
     public static class ServiceCollectionExtensions
     {
@@ -22,34 +22,51 @@ namespace NetModular.Lib.Data.AspNetCore
         /// 添加数据库
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="env"></param>
+        /// <param name="environmentName"></param>
         /// <param name="modules"></param>
-        public static void AddDb(this IServiceCollection services, IHostingEnvironment env, IModuleCollection modules)
+        public static void AddDb(this IServiceCollection services, string environmentName, IModuleCollection modules)
         {
             var cfgHelper = new ConfigurationHelper();
-            var dbOptions = cfgHelper.Get<DbOptions>("Db", env.EnvironmentName);
+            var dbOptions = cfgHelper.Get<DbOptions>("Db", environmentName);
 
             if (!dbOptions.Connections.Any() || !modules.Any())
                 return;
+
+            CheckOptions(dbOptions);
 
             services.AddSingleton(dbOptions);
 
             foreach (var options in dbOptions.Connections)
             {
-                var module = modules.FirstOrDefault(m => m.Id.Equals(options.Name, StringComparison.OrdinalIgnoreCase));
+                var module = modules.FirstOrDefault(m => m.Id.EqualsIgnoreCase(options.Name));
+                if (module != null)
+                {
+                    LoadEntityTypes(module, options);
 
-                LoadEntityTypes(module, options);
+                    services.AddDbContext(module, options, dbOptions);
+                }
+            }
+        }
 
-                services.AddDbContext(module, options, dbOptions);
+        private static void CheckOptions(DbOptions options)
+        {
+            foreach (var dbConnectionOptions in options.Connections)
+            {
+                Check.NotNull(dbConnectionOptions.Name, "dbConnectionOptions.Name", "数据库配置项名称不能为空");
+                Check.NotNull(dbConnectionOptions.ConnString, "dbConnectionOptions.ConnString", "数据库配置项连接字符串不能为空");
+                if (dbConnectionOptions.Database.IsNull())
+                {
+                    dbConnectionOptions.Database = dbConnectionOptions.Name;
+                }
             }
         }
 
         /// <summary>
         /// 添加数据库上下文
         /// </summary>
-        private static void AddDbContext(this IServiceCollection services, ModuleInfo module, DbConnectionOptions options, DbOptions dbOptions)
+        private static void AddDbContext(this IServiceCollection services, IModuleDescriptor module, DbConnectionOptions options, DbOptions dbOptions)
         {
-            var dbContextType = module.AssembliesInfo.Infrastructure.GetTypes().FirstOrDefault(m => m.Name.EqualsIgnoreCase(options.Name + "DbContext"));
+            var dbContextType = module.AssemblyDescriptor.Infrastructure.GetTypes().FirstOrDefault(m => m.Name.EqualsIgnoreCase(options.Name + "DbContext"));
             if (dbContextType != null)
             {
                 var assemblyHelper = new AssemblyHelper();
@@ -60,13 +77,13 @@ namespace NetModular.Lib.Data.AspNetCore
 
                 //日志工厂
                 var loggerFactory = dbOptions.Logging ? services.BuildServiceProvider().GetService<ILoggerFactory>() : null;
-                //请求上下文访问器
-                var httpContextAccessor = services.BuildServiceProvider().GetService<IHttpContextAccessor>();
+                //登录信息
+                var loginInfo = services.BuildServiceProvider().GetService<ILoginInfo>();
 
-                var contextOptions = (IDbContextOptions)Activator.CreateInstance(dbContextOptionsType, options, loggerFactory, httpContextAccessor);
+                var contextOptions = (IDbContextOptions)Activator.CreateInstance(dbContextOptionsType, dbOptions, options, loggerFactory, loginInfo);
 
                 services.AddScoped(typeof(IDbContext), sp => Activator.CreateInstance(dbContextType, contextOptions));
-                services.AddUnitOfWork(dbContextType);
+                services.AddUnitOfWork(dbContextType, options);
                 services.AddRepositories(module, options);
             }
         }
@@ -76,28 +93,33 @@ namespace NetModular.Lib.Data.AspNetCore
         /// </summary>
         /// <param name="services"></param>
         /// <param name="dbContextType"></param>
-        private static void AddUnitOfWork(this IServiceCollection services, Type dbContextType)
+        /// <param name="options"></param>
+        private static void AddUnitOfWork(this IServiceCollection services, Type dbContextType, DbConnectionOptions options)
         {
             var serviceType = typeof(IUnitOfWork<>).MakeGenericType(dbContextType);
             var implementType = typeof(UnitOfWork<>).MakeGenericType(dbContextType);
-            services.AddScoped(serviceType, implementType);
+            services.AddScoped(serviceType, sp =>
+            {
+                var dbContext = sp.GetServices<IDbContext>().FirstOrDefault(m => m.Options.Name.Equals(options.Name));
+                return Activator.CreateInstance(implementType, dbContext);
+            });
         }
 
         /// <summary>
         /// 添加仓储
         /// </summary>
-        private static void AddRepositories(this IServiceCollection services, ModuleInfo module, DbConnectionOptions options)
+        private static void AddRepositories(this IServiceCollection services, IModuleDescriptor module, DbConnectionOptions options)
         {
-            var interfaceList = module.AssembliesInfo.Domain.GetTypes().Where(t => t.IsInterface && typeof(IRepository<>).IsImplementType(t)).ToList();
+            var interfaceList = module.AssemblyDescriptor.Domain.GetTypes().Where(t => t.IsInterface && typeof(IRepository<>).IsImplementType(t)).ToList();
 
             if (!interfaceList.Any())
                 return;
 
             //根据仓储的命名空间名称来注入不同数据库的仓储
-            var entityNamespacePrefix = $"{module.AssembliesInfo.Infrastructure.GetName().Name}.Repositories.{options.Dialect}.";
+            var entityNamespacePrefix = $"{module.AssemblyDescriptor.Infrastructure.GetName().Name}.Repositories.{options.Dialect}.";
             foreach (var serviceType in interfaceList)
             {
-                var implementType = module.AssembliesInfo.Infrastructure.GetTypes().FirstOrDefault(m => m.FullName.NotNull() && m.FullName.StartsWith(entityNamespacePrefix) && serviceType.IsAssignableFrom(m));
+                var implementType = module.AssemblyDescriptor.Infrastructure.GetTypes().FirstOrDefault(m => m.FullName.NotNull() && m.FullName.StartsWith(entityNamespacePrefix) && serviceType.IsAssignableFrom(m));
                 if (implementType != null)
                 {
                     services.AddScoped(serviceType, sp =>
@@ -114,9 +136,9 @@ namespace NetModular.Lib.Data.AspNetCore
         /// </summary>
         /// <param name="module"></param>
         /// <param name="options"></param>
-        private static void LoadEntityTypes(ModuleInfo module, DbConnectionOptions options)
+        private static void LoadEntityTypes(IModuleDescriptor module, DbConnectionOptions options)
         {
-            options.EntityTypes = module.AssembliesInfo.Domain.GetTypes().Where(t => t.IsClass && typeof(IEntity).IsImplementType(t)).ToList();
+            options.EntityTypes = module.AssemblyDescriptor.Domain.GetTypes().Where(t => t.IsClass && typeof(IEntity).IsImplementType(t)).ToList();
         }
     }
 }

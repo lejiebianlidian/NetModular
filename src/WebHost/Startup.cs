@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
-using NetModular.Lib.WebHost.Core;
+using Nm.Lib.Host.Web;
 
-namespace NetModular.WebHost
+namespace Nm.WebHost
 {
     public class Startup : StartupAbstract
     {

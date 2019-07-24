@@ -18,8 +18,7 @@ export default {
     width: '60%',
     height: '70%',
     noScrollbar: true,
-    fullscreen: true,
-    noFooter: true
+    fullscreen: true
   },
   actions: {
     /**

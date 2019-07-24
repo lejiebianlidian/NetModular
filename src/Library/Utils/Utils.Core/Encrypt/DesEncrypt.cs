@@ -2,16 +2,16 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using NetModular.Lib.Utils.Core.Extensions;
+using Nm.Lib.Utils.Core.Extensions;
 
-namespace NetModular.Lib.Utils.Core.Encrypt
+namespace Nm.Lib.Utils.Core.Encrypt
 {
     /// <summary>
     /// Des加解密
     /// </summary>
     public class DesEncrypt
     {
-        private const string Key = "oldli!@#";
+        private const string Key = "tdkj.!@#";
 
         /// <summary>
         /// DES+Base64加密

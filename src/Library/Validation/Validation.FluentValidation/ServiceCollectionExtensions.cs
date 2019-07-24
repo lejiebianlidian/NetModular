@@ -2,10 +2,11 @@
 using FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using NetModular.Lib.Module.Abstractions;
-using NetModular.Lib.Validation.Abstractions;
+using Nm.Lib.Module.Abstractions;
+using Nm.Lib.Module.AspNetCore;
+using Nm.Lib.Validation.Abstractions;
 
-namespace NetModular.Lib.Validation.FluentValidation
+namespace Nm.Lib.Validation.FluentValidation
 {
     public static class ServiceCollectionExtensions
     {
@@ -23,9 +24,12 @@ namespace NetModular.Lib.Validation.FluentValidation
             builder.AddFluentValidation(fv =>
             {
                 var modules = services.BuildServiceProvider().GetService<IModuleCollection>();
-                foreach (var moduleInfo in modules)
+                foreach (var module in modules)
                 {
-                    fv.RegisterValidatorsFromAssembly(moduleInfo.AssembliesInfo.Application);
+                    if (module.AssemblyDescriptor != null && module.AssemblyDescriptor is ModuleAssemblyDescriptor descriptor)
+                    {
+                        fv.RegisterValidatorsFromAssembly(descriptor.Web);
+                    }
                 }
             });
 

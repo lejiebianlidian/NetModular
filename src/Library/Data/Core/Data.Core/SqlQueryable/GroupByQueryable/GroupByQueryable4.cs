@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Entities;
-using NetModular.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable;
-using NetModular.Lib.Data.Core.SqlQueryable.Internal;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Abstractions.Entities;
+using Nm.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable;
+using Nm.Lib.Data.Core.SqlQueryable.Internal;
 
-namespace NetModular.Lib.Data.Core.SqlQueryable.GroupByQueryable
+namespace Nm.Lib.Data.Core.SqlQueryable.GroupByQueryable
 {
     internal class GroupByQueryable4<TKey, TEntity, TEntity2, TEntity3, TEntity4> : GroupByQueryableAbstract, IGroupByQueryable4<TKey, TEntity, TEntity2, TEntity3, TEntity4>
         where TEntity : IEntity, new()
@@ -52,16 +50,6 @@ namespace NetModular.Lib.Data.Core.SqlQueryable.GroupByQueryable
         {
             SetSelect(expression);
             return this;
-        }
-
-        public IList<TEntity> ToList()
-        {
-            return ToList<TEntity>();
-        }
-
-        public Task<IList<TEntity>> ToListAsync()
-        {
-            return ToListAsync<TEntity>();
         }
     }
 }

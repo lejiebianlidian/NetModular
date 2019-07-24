@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Core;
-using NetModular.Module.Admin.Domain.MenuPermission;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Core;
+using Nm.Module.Admin.Domain.MenuPermission;
 
-namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
+namespace Nm.Module.Admin.Infrastructure.Repositories.SqlServer
 {
-    public class MenuPermissionRepository : RepositoryAbstract<MenuPermission>, IMenuPermissionRepository
+    public class MenuPermissionRepository : RepositoryAbstract<MenuPermissionEntity>, IMenuPermissionRepository
     {
         public MenuPermissionRepository(IDbContext dbContext) : base(dbContext)
         {
@@ -28,7 +28,7 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
             return Db.Find(e => e.MenuId == menuId).DeleteAsync();
         }
 
-        public Task<IList<MenuPermission>> GetListByMenuId(Guid menuId)
+        public Task<IList<MenuPermissionEntity>> GetListByMenuId(Guid menuId)
         {
             return Db.Find(e => e.MenuId == menuId).ToListAsync();
         }

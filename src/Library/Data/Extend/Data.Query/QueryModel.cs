@@ -1,4 +1,4 @@
-﻿namespace NetModular.Lib.Data.Query
+﻿namespace Nm.Lib.Data.Query
 {
     /// <summary>
     /// 查询抽象
@@ -9,5 +9,10 @@
         /// 分页信息
         /// </summary>
         public QueryPagingModel Page { get; set; } = new QueryPagingModel();
+
+        /// <summary>
+        /// 总数
+        /// </summary>
+        public long TotalCount { get; set; }
     }
 }

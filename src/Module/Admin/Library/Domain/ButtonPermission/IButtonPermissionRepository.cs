@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
+using Nm.Lib.Data.Abstractions;
 
-namespace NetModular.Module.Admin.Domain.ButtonPermission
+namespace Nm.Module.Admin.Domain.ButtonPermission
 {
     /// <summary>
     /// 按钮权限仓储
     /// </summary>
-    public interface IButtonPermissionRepository : IRepository<ButtonPermission>
+    public interface IButtonPermissionRepository : IRepository<ButtonPermissionEntity>
     {
         /// <summary>
         /// 判断是否存在绑定了指定权限的按钮

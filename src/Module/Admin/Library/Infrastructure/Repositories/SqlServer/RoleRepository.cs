@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Pagination;
-using NetModular.Lib.Data.Core;
-using NetModular.Lib.Utils.Core.Extensions;
-using NetModular.Module.Admin.Domain.Account;
-using NetModular.Module.Admin.Domain.Role;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Core;
+using Nm.Lib.Data.Query;
+using Nm.Lib.Utils.Core.Extensions;
+using Nm.Module.Admin.Domain.Account;
+using Nm.Module.Admin.Domain.Role;
+using Nm.Module.Admin.Domain.Role.Models;
 
-namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
+namespace Nm.Module.Admin.Infrastructure.Repositories.SqlServer
 {
-    public class RoleRepository : RepositoryAbstract<Role>, IRoleRepository
+    public class RoleRepository : RepositoryAbstract<RoleEntity>, IRoleRepository
     {
         public RoleRepository(IDbContext dbContext) : base(dbContext)
         {
@@ -24,15 +25,18 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
             return query.ExistsAsync();
         }
 
-        public Task<IList<Role>> Query(Paging paging, string name = null)
+        public async Task<IList<RoleEntity>> Query(RoleQueryModel model)
         {
-            var query = Db.Find(m => m.Deleted == false).LeftJoin<Account>((x, y) => x.CreatedBy == y.Id);
-            query.WhereIf(name.NotNull(), (x, y) => x.Name.Contains(name));
+            var paging = model.Paging();
+            var query = Db.Find(m => m.Deleted == false).LeftJoin<AccountEntity>((x, y) => x.CreatedBy == y.Id);
+            query.WhereIf(model.Name.NotNull(), (x, y) => x.Name.Contains(model.Name));
             query.Select((x, y) => new { x, Creator = y.Name });
-            return query.PaginationAsync(paging);
+            var list = await query.PaginationAsync(paging);
+            model.TotalCount = paging.TotalCount;
+            return list;
         }
 
-        public override Task<IList<Role>> GetAllAsync()
+        public override Task<IList<RoleEntity>> GetAllAsync()
         {
             return Db.Find(m => m.Deleted == false).ToListAsync();
         }

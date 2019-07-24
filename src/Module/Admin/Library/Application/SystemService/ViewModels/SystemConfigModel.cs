@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace NetModular.Module.Admin.Application.SystemService.ViewModels
+namespace Nm.Module.Admin.Application.SystemService.ViewModels
 {
     public class SystemConfigModel
     {
@@ -13,7 +13,6 @@ namespace NetModular.Module.Admin.Application.SystemService.ViewModels
         /// <summary>
         /// Logo
         /// </summary>
-        [Required(ErrorMessage = "请选择系统Logo")]
         public string Logo { get; set; }
 
         /// <summary>
@@ -27,6 +26,11 @@ namespace NetModular.Module.Admin.Application.SystemService.ViewModels
         public string Home { get; set; }
 
         /// <summary>
+        /// 个人信息页
+        /// </summary>
+        public string UserInfoPage { get; set; }
+
+        /// <summary>
         /// 启用按钮权限
         /// </summary>
         public bool ButtonPermission { get; set; }
@@ -37,9 +41,19 @@ namespace NetModular.Module.Admin.Application.SystemService.ViewModels
         public bool Auditing { get; set; }
 
         /// <summary>
+        /// 启用登陆验证码功能
+        /// </summary>
+        public bool LoginVerifyCode { get; set; }
+
+        /// <summary>
         /// 工具栏
         /// </summary>
         public SystemToolbar Toolbar { get; set; } = new SystemToolbar();
+
+        /// <summary>
+        /// 自定义Css样式
+        /// </summary>
+        public string CustomCss { get; set; }
     }
 
     /// <summary>
@@ -56,6 +70,16 @@ namespace NetModular.Module.Admin.Application.SystemService.ViewModels
         /// 皮肤设置
         /// </summary>
         public bool Skin { get; set; }
+
+        /// <summary>
+        /// 退出
+        /// </summary>
+        public bool Logout { get; set; }
+
+        /// <summary>
+        /// 用户信息
+        /// </summary>
+        public bool UserInfo { get; set; }
     }
 
     /// <summary>
@@ -79,6 +103,11 @@ namespace NetModular.Module.Admin.Application.SystemService.ViewModels
         public const string Home = "sys_home";
 
         /// <summary>
+        /// 个人信息页
+        /// </summary>
+        public const string UserInfoPage = "sys_userinfo_page";
+
+        /// <summary>
         /// 是否启用按钮权限
         /// </summary>
         public const string ButtonPermission = "sys_button_permission";
@@ -89,6 +118,11 @@ namespace NetModular.Module.Admin.Application.SystemService.ViewModels
         public const string Auditing = "sys_auditing";
 
         /// <summary>
+        /// 启用登录验证码功能
+        /// </summary>
+        public const string LoginVerifyCode = "sys_verify_code";
+
+        /// <summary>
         /// 工具栏：全屏按钮
         /// </summary>
         public const string ToolbarFullscreen = "sys_toolbar_fullscreen";
@@ -97,5 +131,20 @@ namespace NetModular.Module.Admin.Application.SystemService.ViewModels
         /// 工具栏：皮肤切换
         /// </summary>
         public const string ToolbarSkin = "sys_toolbar_skin";
+
+        /// <summary>
+        /// 工具栏：退出
+        /// </summary>
+        public const string ToolbarLogout = "sys_toolbar_logout";
+
+        /// <summary>
+        /// 工具栏：用户信息
+        /// </summary>
+        public const string ToolbarUserInfo = "sys_toolbar_userinfo";
+
+        /// <summary>
+        /// 自定义css样式
+        /// </summary>
+        public const string CustomCss = "sys_toolbar_customcss";
     }
 }

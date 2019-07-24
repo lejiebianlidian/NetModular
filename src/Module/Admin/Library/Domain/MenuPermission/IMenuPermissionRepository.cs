@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions;
+using Nm.Lib.Data.Abstractions;
 
-namespace NetModular.Module.Admin.Domain.MenuPermission
+namespace Nm.Module.Admin.Domain.MenuPermission
 {
     /// <summary>
     /// 菜单权限仓储
     /// </summary>
-    public interface IMenuPermissionRepository : IRepository<MenuPermission>
+    public interface IMenuPermissionRepository : IRepository<MenuPermissionEntity>
     {
         /// <summary>
         /// 判断是否存在绑定了指定权限的菜单
@@ -36,6 +36,6 @@ namespace NetModular.Module.Admin.Domain.MenuPermission
         /// </summary>
         /// <param name="menuId"></param>
         /// <returns></returns>
-        Task<IList<MenuPermission>> GetListByMenuId(Guid menuId);
+        Task<IList<MenuPermissionEntity>> GetListByMenuId(Guid menuId);
     }
 }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Text;
-using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Data.Abstractions.Enums;
+using Nm.Lib.Data.Abstractions;
+using Nm.Lib.Data.Abstractions.Enums;
 
-namespace NetModular.Lib.Data.Core
+namespace Nm.Lib.Data.Core
 {
     public abstract class SqlAdapterAbstract : ISqlAdapter
     {
@@ -53,7 +53,7 @@ namespace NetModular.Lib.Data.Core
         /// <returns></returns>
         public string AppendQuote(string value)
         {
-            return $"{LeftQuote}{value.Trim()}{RightQuote}";
+            return $"{LeftQuote}{value?.Trim()}{RightQuote}";
         }
 
         /// <summary>

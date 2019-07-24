@@ -2,10 +2,15 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace NetModular.Module.Admin.Application.AccountService.ViewModels
+namespace Nm.Module.Admin.Application.AccountService.ViewModels
 {
     public class AccountAddModel
     {
+        /// <summary>
+        /// 类型
+        /// </summary>
+        public int Type { get; set; }
+
         /// <summary>
         /// 用户名
         /// </summary>

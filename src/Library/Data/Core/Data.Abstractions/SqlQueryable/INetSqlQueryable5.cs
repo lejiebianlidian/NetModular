@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using NetModular.Lib.Data.Abstractions.Entities;
-using NetModular.Lib.Data.Abstractions.Enums;
-using NetModular.Lib.Data.Abstractions.Pagination;
-using NetModular.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable;
+using Nm.Lib.Data.Abstractions.Entities;
+using Nm.Lib.Data.Abstractions.Enums;
+using Nm.Lib.Data.Abstractions.Pagination;
+using Nm.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable;
 
-namespace NetModular.Lib.Data.Abstractions.SqlQueryable
+namespace Nm.Lib.Data.Abstractions.SqlQueryable
 {
     public interface INetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5> : INetSqlQueryable
         where TEntity : IEntity, new()
@@ -187,40 +187,6 @@ namespace NetModular.Lib.Data.Abstractions.SqlQueryable
 
         #endregion
 
-        #region ==ToList==
-
-        /// <summary>
-        /// 查询实体列表
-        /// </summary>
-        /// <returns></returns>
-        IList<TEntity> ToList();
-
-        /// <summary>
-        /// 查询实体列表
-        /// </summary>
-        /// <returns></returns>
-        Task<IList<TEntity>> ToListAsync();
-
-        #endregion
-
-        #region ==Pagination==
-
-        /// <summary>
-        /// 分页查询实体列表
-        /// </summary>
-        /// <param name="paging"></param>
-        /// <returns></returns>
-        IList<TEntity> Pagination(Paging paging = null);
-
-        /// <summary>
-        /// 分页查询实体列表
-        /// </summary>
-        /// <param name="paging"></param>
-        /// <returns></returns>
-        Task<IList<TEntity>> PaginationAsync(Paging paging = null);
-
-        #endregion
-
         #region ==GroupBy==
 
         /// <summary>
@@ -228,6 +194,56 @@ namespace NetModular.Lib.Data.Abstractions.SqlQueryable
         /// </summary>
         /// <returns></returns>
         IGroupByQueryable5<TResult, TEntity, TEntity2, TEntity3, TEntity4, TEntity5> GroupBy<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression);
+
+        #endregion
+
+        #region ==ToList==
+
+        /// <summary>
+        /// 查询列表，返回指定类型
+        /// </summary>
+        /// <returns></returns>
+        new IList<TEntity> ToList();
+
+        /// <summary>
+        /// 查询列表，返回指定类型
+        /// </summary>
+        /// <returns></returns>
+        new Task<IList<TEntity>> ToListAsync();
+
+        #endregion
+
+        #region ==Pagination==
+
+        /// <summary>
+        /// 分页查询，返回实体类型
+        /// </summary>
+        /// <param name="paging"></param>
+        /// <returns></returns>
+        new IList<TEntity> Pagination(Paging paging = null);
+
+        /// <summary>
+        /// 分页查询，返回实体类型
+        /// </summary>
+        /// <param name="paging"></param>
+        /// <returns></returns>
+        new Task<IList<TEntity>> PaginationAsync(Paging paging = null);
+
+        #endregion
+
+        #region ==First==
+
+        /// <summary>
+        /// 查询第一条数据，返回指定类型
+        /// </summary>
+        /// <returns></returns>
+        new TEntity First();
+
+        /// <summary>
+        /// 查询第一条数据，返回指定类型
+        /// </summary>
+        /// <returns></returns>
+        new Task<TEntity> FirstAsync();
 
         #endregion
     }

@@ -1,13 +1,12 @@
-import drop from './drop'
-import resizable from './resizable'
+import lib from '../library'
 import has from './has'
-const directive = [drop, resizable, has]
-const prefix = 'Nm'
+
+const directive = [has]
 
 const install = {
   install: Vue => {
     directive.forEach(o => {
-      Vue.directive(`${prefix}${o.name}`, o.directive)
+      Vue.directive(`${lib.prefix}${o.name}`, o.directive)
     })
   }
 }

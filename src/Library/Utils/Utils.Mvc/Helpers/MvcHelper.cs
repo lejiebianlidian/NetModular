@@ -6,10 +6,10 @@ using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using NetModular.Lib.Utils.Core.Attributes;
-using NetModular.Lib.Utils.Core.Extensions;
+using Nm.Lib.Utils.Core.Attributes;
+using Nm.Lib.Utils.Core.Extensions;
 
-namespace NetModular.Lib.Utils.Mvc.Helpers
+namespace Nm.Lib.Utils.Mvc.Helpers
 {
     /// <summary>
     /// MVC帮助类
@@ -48,21 +48,20 @@ namespace NetModular.Lib.Utils.Mvc.Helpers
                     if (typeInfo.IsAbstract)
                         continue;
 
-
                     var controller = new ControllerDescriptor
                     {
                         Name = typeInfo.Name.Replace("Controller", ""),
                         TypeInfo = typeInfo
                     };
 
-                    var areaAttr = (AreaAttribute) Attribute.GetCustomAttribute(typeInfo, typeof(AreaAttribute));
+                    var areaAttr = (AreaAttribute)Attribute.GetCustomAttribute(typeInfo, typeof(AreaAttribute));
                     if (areaAttr != null)
                     {
                         controller.Area = areaAttr.RouteValue;
                     }
 
                     var descAttr =
-                        (DescriptionAttribute) Attribute.GetCustomAttribute(typeInfo, typeof(DescriptionAttribute));
+                        (DescriptionAttribute)Attribute.GetCustomAttribute(typeInfo, typeof(DescriptionAttribute));
                     if (descAttr != null && descAttr.Description.NotNull())
                     {
                         controller.Description = descAttr.Description;
