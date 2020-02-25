@@ -181,7 +181,6 @@ PublishScripts/
 # NuGet Packages
 *.nupkg
 # The packages folder can be ignored because of Package Restore
-**/[Pp]ackages/*
 # except build/, which is used as an MSBuild target.
 !**/[Pp]ackages/build/
 # Uncomment if necessary however generally it will be regenerated when needed
@@ -332,7 +331,6 @@ ASALocalRun/
 
 # Local History for Visual Studio
 .localhistory/
-/packages
 /src/UI/nm-module-admin/package-lock.json
 /src/Web/modules
 /src/UI/nm-module-admin/dist
@@ -348,3 +346,7 @@ ASALocalRun/
 /src/Module/Common/UI/module-common/package-lock.json
 /src/Module/CodeGenerator/UI/module-code-generator/package-lock.json
 /src/Module/PersonnelFiles/UI/module-personnelfiles/package-lock.json
+/src/Module/PersonnelFiles/UI/module-personnelfiles/package-lock.json
+/src/Module/Quartz/UI/module-quartz/package-lock.json
+/docs/package-lock.json
+/src/Admin/UI/module-admin

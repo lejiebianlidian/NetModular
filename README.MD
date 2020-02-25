@@ -1,139 +1,103 @@
-## .Net Core 模块化的前后端分离的快速开发框架
+<h1 align="center">
+  <img src="./img/logo.png" alt="NetModular" width="175"/>
+<br>
+NetModular
+</h1>
 
-### 框架特点
+[English](README_EN.MD)
 
-1、模块化  
-2、前后端分离  
-3、多数据库任意切换(目前支持 SqlServer、MySql、SQLite)  
-4、异步到底
+## NetModular是什么
 
-### Demo
+> **她** 是一款基于.Net Core 和 Vue.js 的模块化以及前后端分离的快速开发框架
 
-地址：[https://nm.iamoldli.com](https://nm.iamoldli.com)
+> **她** 是能够让中小企业或团队快速搭建内部开发平台的解决方案
 
-账户：admin  
-密码：admin
+> **她** 开箱即用
 
-### 前端框架 Demo
+> **她** 完全免费
 
-地址：[http://nm.demo.iamoldli.com/index.html](http://nm.demo.iamoldli.com/index.html)  
-账户：admin  
-密码：admin
+## 开发环境
 
-### 文档
+> 开发工具
+>
+> > [Visual Studio 2019+](https://visualstudio.microsoft.com/zh-hans/downloads/)、[Visual Studio Code](https://code.visualstudio.com/)
 
-> [1、开篇](https://www.cnblogs.com/oldli/p/10895001.html)  
-> [2、快速创建一个业务模块](https://www.cnblogs.com/oldli/p/10905415.html)  
-> [3、数据访问模块介绍](https://www.cnblogs.com/oldli/p/10910247.html)  
-> [4、模块化实现思路](https://www.cnblogs.com/oldli/p/10945137.html)
+> 后端
+>
+> > [.Net Core 3.1](https://dotnet.microsoft.com/download)、[Dapper](https://github.com/StackExchange/Dapper)、[Serilog](https://serilog.net/)、[AutoMapper](https://automapper.org/)、[FluentValidation](https://fluentvalidation.net)、[Swagger](https://github.com/domaindrivendev/Swashbuckle.AspNetCore)、RabbitMQ、Redis、EPPlus
 
-### 交流QQ群
+> 前端
+>
+> > [Node.js 10+](https://nodejs.org/en/)、[Vue.js 2.6+](https://cn.vuejs.org/)、[Vue CLI](https://cli.vuejs.org/zh/guide/)、[Vuex](https://vuex.vuejs.org/zh/)、[VueRouter](https://router.vuejs.org/zh/)、[Element-UI](https://element.eleme.cn/#/zh-CN/component/installation)
 
-南京.Net Core交流群 903210423 ，欢迎加群交流学习
+## 前端框架
 
-### 开发环境
+前端框架的源码请移步 [https://github.com/iamoldli/NetModular.UI](https://github.com/iamoldli/NetModular.UI)
 
-#### 服务端
+## 微服务框架
 
-IDE：vs2017+  
-框架：[.Net Core 2.2+](https://docs.microsoft.com/zh-cn/aspnet/core/fundamentals/?tabs=windows&view=aspnetcore-2.2#tabpanel_Rl26OFmlz8_aspnetcore2x)  
-数据库：MSSQL、MySql、SQLite
+基于NetModular扩展的微服务框架 [NetModular.Microservice](https://github.com/iamoldli/NetModular.Microservice)
 
-#### 前端
+## 演示地址
 
-IDE：vscode  
-框架：[Vue.js 全家桶](https://cn.vuejs.org/)、[Element-UI](https://element.eleme.cn/#/zh-CN/component/layout)
+演示地址：[https://demo.17mkh.com/](https://demo.17mkh.com/)  
+账 户：admin  
+密 码: admin  
+演示源码：[https://github.com/iamoldli/NetModular.Demo](https://github.com/iamoldli/NetModular.Demo)
 
-### 运行方式
+## 官方文档
 
-1、找到`data`目录，按需要创建对应数据库(目前只上传了 SqlServer 和 MySql)
+文档地址： [https://docs.17mkh.com](https://docs.17mkh.com)
 
-> > 需要注意的时，在 linux 的 docker 中 mysql 默认启用了区分大小写，需要先关闭
+文档源码： [https://github.com/iamoldli/NetModular.Docs](https://github.com/iamoldli/NetModular.Docs)
 
-2、打开`src/WebHost/conifg/db.json`文件，配置数据库连接
+## 模块列表
 
-数据库切换通过`Dialect`配置：0、SqlServer 1、MySql 2、SQLite
+> 00 [Admin(权限管理)](https://github.com/iamoldli/NetModular/tree/master/src/Admin) 已完成
 
-```json
-{
-  // 是否开启SQL日志
-  "Logging": true,
-  "Connections": [
-    {
-      "Name": "Admin",
-      "Dialect": 1,
-      "Database": "Nm_Admin",
-      "ConnString": "Server=localhost;Database=nm_admin;Uid=root;Pwd=root;Allow User Variables=True;charset=utf8;SslMode=none;"
-    },
-    {
-      "Name": "CodeGenerator",
-      "Dialect": 1,
-      "Database": "Nm_CodeGenerator",
-      "ConnString": "Server=localhost;Database=nm_codegenerator;Uid=root;Pwd=root;Allow User Variables=True;charset=utf8;SslMode=none;"
-    },
-    {
-      "Name": "Common",
-      "Dialect": 1,
-      "Database": "Nm_Common",
-      "ConnString": "Server=localhost;Database=nm_common;Uid=root;Pwd=root;Allow User Variables=True;charset=utf8;SslMode=none;"
-    },
-    {
-      "Name": "PersonnelFiles",
-      "Dialect": 1,
-      "Database": "Nm_PersonnelFiles",
-      "ConnString": "Server=localhost;Database=Nm_PersonnelFiles;Uid=root;Pwd=root;Allow User Variables=True;charset=utf8;SslMode=none;"
-    }
-  ]
-}
-```
+> 01 [Common(通用模块)](https://github.com/iamoldli/Nm.Module.Common) 已完成
 
-3、启动服务端，进入 `src/WebHost/` 目录，使用控制台运行 `dotnet watch run` 命令
+> 02 [CodeGenerator(代码生成器)](https://github.com/iamoldli/Nm.Module.CodeGenerator) 已完成
 
-4、启动前端，进入 `src/WebUI/` 目录，运行以下命令
+> 03 [Quartz(任务调度)](https://github.com/iamoldli/Nm.Module.Quartz) 已完成
 
-```js
-npm i
-npm update
-npm run serve
-```
+> 04 [PersonnelFiles(人事档案)](https://github.com/iamoldli/NetModular.Module.PersonnelFiles) 开发中
 
-node: _如果安装包失败，请使用官方的镜像，不要使用国内的_
+> 05 [Crawler(爬虫模块)](https://github.com/iamoldli/NetModular.Module.Crawler) 开发中
 
-5、然后打开浏览器，输入`http://localhost:5220/`进行浏览
+> 06 [Cas(统一认证)](https://github.com/iamoldli/NetModular.Module.Cas) 开发中
 
-可访问 `http://localhost:6220/swagger/index.html` 查看接口文档
+> 07 [IM(即时通讯)](https://github.com/iamoldli/NetModular.Module.IM) 开发中
 
-### 功能模块
+> 08 [Forum(论坛)](https://github.com/iamoldli/NetModular.Module.Forum) 开发中
 
-> 权限管理模块(00_Admin)
+> 09 [Blog(博客)](https://github.com/iamoldli/NetModular.Module.Blog) 开发中
 
-> > - [x] 模块管理
-> > - [x] 权限管理
-> > - [x] 菜单管理
-> > - [x] 按钮管理
-> > - [x] 角色管理
-> > - [x] 账户管理
-> > - [x] 审计日志
-> > - [x] 配置管理
-> > - [x] 系统设置
+> 10 [Contract(合同管理)](https://github.com/iamoldli/NetModular.Module.Contract) 开发中
 
-> 代码生成模块(01_CodeGenerator)
+> 11 [News(新闻管理)](https://github.com/iamoldli/NetModular.Module.News) 开发中
 
-> > - [x] 项目管理
-> > - [x] 实体配置
-> > - [x] 枚举管理
+> 12 [Performance(绩效考核)](https://github.com/iamoldli/NetModular.Module.Performance) 开发中
 
-> 通用模块(02_Common)
+> 13 [Meeting(会议管理)](https://github.com/iamoldli/NetModular.Module.Meeting) 开发中
 
-> > - [x] 行政区划代码管理
-> > - [x] 附件管理
-> > - [ ] 字典表管理
+> 14 [Book(图书管理)](https://github.com/iamoldli/NetModular.Module.Book) 开发中
 
-> 人事档案(03_PersonnelFiles)
+> 15 [Archives(档案管理)](https://github.com/iamoldli/NetModular.Module.Archives) 开发中
 
-> > - [x] 公司单位管理
-> > - [x] 部门管理
-> > - [x] 岗位管理
-> > - [x] 人员信息管理
-> > - [x] 人员工作经历管理
-> > - [x] 人员教育经历管理
+> 16 [Document(文档管理)](https://github.com/iamoldli/NetModular.Module.Document) 开发中
+
+> 17 [Salary(薪酬管理)](https://github.com/iamoldli/NetModular.Module.Salary) 开发中
+
+## 技术交流
+
+QQ 群：点击加群 [903210423](http://shang.qq.com/wpa/qunwpa?idkey=cfc871fccc7173f17ac2c9d12c8a31a7549c260e6aefcb6a40fdcc4b423940b0)
+
+<img src="./img/qq.jpg" alt="QQ" height="300"/>
+
+<h4 align="center">
+如您觉得本框架对您有帮助，可以请作者媳妇儿喝杯二锅头~
+<br>
+<br>
+  <img src="./img/airpay.jpg" alt="支付宝" height="320"/><img src="./img/wechat.jpg" alt="微信" height="320"/>
+</h4>
