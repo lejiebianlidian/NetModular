@@ -7,7 +7,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "http://localhost:6220/swagger"
+      "applicationUrl": "http://localhost:6220"
     }
   }
 }

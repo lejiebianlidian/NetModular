@@ -8,7 +8,6 @@ using System.Text;
 using NetModular.Lib.Data.Abstractions;
 using NetModular.Lib.Data.Abstractions.Enums;
 using NetModular.Lib.Data.Core.SqlQueryable.Internal;
-using NetModular.Lib.Utils.Core.Extensions;
 
 namespace NetModular.Lib.Data.Core.ExpressionResolve
 {
@@ -139,6 +138,18 @@ namespace NetModular.Lib.Data.Core.ExpressionResolve
                 case ExpressionType.NotEqual:
                     _sqlBuilder.Append(" <> ");
                     break;
+                case ExpressionType.Add:
+                    _sqlBuilder.Append(" + ");
+                    break;
+                case ExpressionType.Subtract:
+                    _sqlBuilder.Append(" - ");
+                    break;
+                case ExpressionType.Multiply:
+                    _sqlBuilder.Append(" * ");
+                    break;
+                case ExpressionType.Divide:
+                    _sqlBuilder.Append(" / ");
+                    break;
             }
 
             Resolve(binaryExp.Right);
@@ -172,8 +183,15 @@ namespace NetModular.Lib.Data.Core.ExpressionResolve
                     DynamicInvokeResolve(exp);
                     return;
                 }
+
                 if (memberExp.Expression.NodeType == ExpressionType.MemberAccess)
                 {
+                    if (memberExp.Expression is MemberExpression subMemberExp && subMemberExp.Expression.NodeType == ExpressionType.Constant)
+                    {
+                        DynamicInvokeResolve(exp);
+                        return;
+                    }
+
                     //分组查询
                     if (_queryBody.IsGroupBy)
                     {
@@ -185,19 +203,16 @@ namespace NetModular.Lib.Data.Core.ExpressionResolve
                             return;
                         }
                     }
-                    else
+                    else if (memberExp.Expression.Type.IsString())
                     {
-                        if (memberExp.Expression.Type.IsString())
+                        switch (memberExp.Member.Name)
                         {
-                            var memberName = memberExp.Member.Name;
-                            //解析Length函数
-                            if (memberName.Equals("Length"))
-                            {
+                            case "Length":
+                                //解析Length函数
                                 var funcName = _sqlAdapter.FuncLength;
                                 var colName = _queryBody.GetColumnName(memberExp.Expression as MemberExpression, _fullExpression);
                                 _sqlBuilder.AppendFormat("{0}({1})", funcName, colName);
                                 return;
-                            }
                         }
                     }
                 }
@@ -218,7 +233,6 @@ namespace NetModular.Lib.Data.Core.ExpressionResolve
         private void DynamicInvokeResolve(Expression exp)
         {
             var value = DynamicInvoke(exp);
-
             AppendValue(value);
         }
 
@@ -794,7 +808,7 @@ namespace NetModular.Lib.Data.Core.ExpressionResolve
             if (exp.Type.IsEnum)
                 return result.ToInt();
 
-            return result ?? "";
+            return result;
         }
 
         private void AppendValue(object value)

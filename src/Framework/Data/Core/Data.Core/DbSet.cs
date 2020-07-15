@@ -12,8 +12,6 @@ using NetModular.Lib.Data.Abstractions.Entities;
 using NetModular.Lib.Data.Abstractions.Enums;
 using NetModular.Lib.Data.Abstractions.SqlQueryable;
 using NetModular.Lib.Data.Core.SqlQueryable;
-using NetModular.Lib.Utils.Core;
-using NetModular.Lib.Utils.Core.Extensions;
 
 namespace NetModular.Lib.Data.Core
 {
@@ -58,6 +56,8 @@ namespace NetModular.Lib.Data.Core
             Check.NotNull(entity, nameof(entity));
 
             SetCreatedBy(entity);
+
+            SetTenant(entity);
 
             var sql = _sql.Insert(tableName);
 
@@ -113,7 +113,10 @@ namespace NetModular.Lib.Data.Core
         public async Task<bool> InsertAsync(TEntity entity, IUnitOfWork uow = null, string tableName = null)
         {
             Check.NotNull(entity, nameof(entity));
+
             SetCreatedBy(entity);
+
+            SetTenant(entity);
 
             var sql = _sql.Insert(tableName);
 
@@ -193,6 +196,8 @@ namespace NetModular.Lib.Data.Core
                         {
                             SetCreatedBy(entity);
 
+                            SetTenant(entity);
+
                             var value = EntityDescriptor.PrimaryKey.PropertyInfo.GetValue(entity);
                             if ((Guid)value == Guid.Empty)
                             {
@@ -223,6 +228,8 @@ namespace NetModular.Lib.Data.Core
 
                         var entity = entityList[t];
                         SetCreatedBy(entity);
+
+                        SetTenant(entity);
 
                         sqlBuilder.Append("(");
                         for (var i = 0; i < _sql.BatchInsertColumnList.Count; i++)
@@ -298,6 +305,7 @@ namespace NetModular.Lib.Data.Core
                         entityList.ForEach(entity =>
                         {
                             SetCreatedBy(entity);
+                            SetTenant(entity);
 
                             var value = EntityDescriptor.PrimaryKey.PropertyInfo.GetValue(entity);
                             if ((Guid)value == Guid.Empty)
@@ -330,6 +338,7 @@ namespace NetModular.Lib.Data.Core
                         var entity = entityList[t];
 
                         SetCreatedBy(entity);
+                        SetTenant(entity);
 
                         sqlBuilder.Append("(");
                         for (var i = 0; i < _sql.BatchInsertColumnList.Count; i++)
@@ -498,18 +507,32 @@ namespace NetModular.Lib.Data.Core
             return dynParams;
         }
 
-        public TEntity Get(dynamic id, IUnitOfWork uow = null, string tableName = null, bool rowLock = false)
+        public TEntity Get(dynamic id, IUnitOfWork uow = null, string tableName = null, bool rowLock = false, bool noLock = false)
         {
             var dynParams = GetParameters(id);
-            var sql = rowLock ? _sql.GetAndRowLock(tableName) : _sql.Get(tableName);
+            string sql;
+            if (rowLock)
+                sql = _sql.GetAndRowLock(tableName);
+            else if (_sqlAdapter.SqlDialect == SqlDialect.SqlServer && noLock)
+                sql = _sql.GetAndNoLock(tableName);
+            else
+                sql = _sql.Get(tableName);
+
             _logger?.LogDebug("Get:{@sql}", sql);
             return QuerySingleOrDefault<TEntity>(sql, dynParams, uow);
         }
 
-        public Task<TEntity> GetAsync(dynamic id, IUnitOfWork uow = null, string tableName = null, bool rowLock = false)
+        public Task<TEntity> GetAsync(dynamic id, IUnitOfWork uow = null, string tableName = null, bool rowLock = false, bool noLock = false)
         {
             var dynParams = GetParameters(id);
-            var sql = rowLock ? _sql.GetAndRowLock(tableName) : _sql.Get(tableName);
+            string sql;
+            if (rowLock)
+                sql = _sql.GetAndRowLock(tableName);
+            else if (_sqlAdapter.SqlDialect == SqlDialect.SqlServer && noLock)
+                sql = _sql.GetAndNoLock(tableName);
+            else
+                sql = _sql.Get(tableName);
+
             _logger?.LogDebug("GetAsync:{@sql}", sql);
             return QuerySingleOrDefaultAsync<TEntity>(sql, dynParams, uow);
         }
@@ -518,7 +541,7 @@ namespace NetModular.Lib.Data.Core
 
         #region ==Exists==
 
-        public bool Exists(dynamic id, IUnitOfWork uow = null, string tableName = null)
+        public bool Exists(dynamic id, IUnitOfWork uow = null, string tableName = null, bool noLock = false)
         {
             //没有主键的表无法使用Exists方法
             if (EntityDescriptor.PrimaryKey.IsNo())
@@ -526,12 +549,13 @@ namespace NetModular.Lib.Data.Core
 
             var dynParams = GetParameters(id);
             var sql = _sql.Exists(tableName);
+
             _logger?.LogDebug("Exists:{@sql}", sql);
 
             return QuerySingleOrDefault<int>(sql, dynParams, uow) > 0;
         }
 
-        public async Task<bool> ExistsAsync(dynamic id, IUnitOfWork uow = null, string tableName = null)
+        public async Task<bool> ExistsAsync(dynamic id, IUnitOfWork uow = null, string tableName = null, bool noLock = false)
         {
             //没有主键的表无法使用Exists方法
             if (EntityDescriptor.PrimaryKey.IsNo())
@@ -539,6 +563,7 @@ namespace NetModular.Lib.Data.Core
 
             var dynParams = GetParameters(id);
             var sql = _sql.Exists(tableName);
+
             _logger?.LogDebug("ExistsAsync:{@sql}", sql);
             return (await QuerySingleOrDefaultAsync<int>(sql, dynParams, uow)) > 0;
         }
@@ -573,6 +598,22 @@ namespace NetModular.Lib.Data.Core
         {
             var tran = GetTransaction(uow);
             return DbContext.NewConnection(tran).ExecuteScalarAsync<T>(sql, param, tran, commandType: commandType);
+        }
+
+        #endregion
+
+        #region ==ExecuteReader==
+
+        public IDataReader ExecuteReader(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
+        {
+            var tran = GetTransaction(uow);
+            return DbContext.NewConnection(tran).ExecuteReader(sql, param, tran, commandType: commandType);
+        }
+
+        public Task<IDataReader> ExecuteReaderAsync(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
+        {
+            var tran = GetTransaction(uow);
+            return DbContext.NewConnection(tran).ExecuteReaderAsync(sql, param, tran, commandType: commandType);
         }
 
         #endregion
@@ -631,16 +672,21 @@ namespace NetModular.Lib.Data.Core
             return DbContext.NewConnection(tran).QuerySingleOrDefaultAsync<T>(sql, param, tran, commandType: commandType);
         }
 
-        public IDataReader ExecuteReader(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
+
+        #endregion
+
+        #region ==QueryMultipleAsync==
+
+        public SqlMapper.GridReader QueryMultiple(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
             var tran = GetTransaction(uow);
-            return DbContext.NewConnection(tran).ExecuteReader(sql, param, tran, commandType: commandType);
+            return DbContext.NewConnection(tran).QueryMultiple(sql, param, tran, commandType: commandType);
         }
 
-        public Task<IDataReader> ExecuteReaderAsync(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
+        public Task<SqlMapper.GridReader> QueryMultipleAsync(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
             var tran = GetTransaction(uow);
-            return DbContext.NewConnection(tran).ExecuteReaderAsync(sql, param, tran, commandType: commandType);
+            return DbContext.NewConnection(tran).QueryMultipleAsync(sql, param, tran, commandType: commandType);
         }
 
         #endregion
@@ -671,24 +717,24 @@ namespace NetModular.Lib.Data.Core
             return DbContext.NewConnection(tran).QueryAsync<T>(sql, param, tran, commandType: commandType);
         }
 
-        public INetSqlQueryable<TEntity> Find()
+        public INetSqlQueryable<TEntity> Find(bool noLock = true)
         {
-            return new NetSqlQueryable<TEntity>(this, null);
+            return new NetSqlQueryable<TEntity>(this, null, null, noLock);
         }
 
-        public INetSqlQueryable<TEntity> Find(Expression<Func<TEntity, bool>> expression)
+        public INetSqlQueryable<TEntity> Find(Expression<Func<TEntity, bool>> expression, bool noLock = true)
         {
-            return new NetSqlQueryable<TEntity>(this, expression);
+            return new NetSqlQueryable<TEntity>(this, expression, null, noLock);
         }
 
-        public INetSqlQueryable<TEntity> Find(string tableName)
+        public INetSqlQueryable<TEntity> Find(string tableName, bool noLock = true)
         {
-            return new NetSqlQueryable<TEntity>(this, null, tableName);
+            return new NetSqlQueryable<TEntity>(this, null, tableName, noLock);
         }
 
-        public INetSqlQueryable<TEntity> Find(Expression<Func<TEntity, bool>> expression, string tableName)
+        public INetSqlQueryable<TEntity> Find(Expression<Func<TEntity, bool>> expression, string tableName, bool noLock = true)
         {
-            return new NetSqlQueryable<TEntity>(this, expression, tableName);
+            return new NetSqlQueryable<TEntity>(this, expression, tableName, noLock);
         }
 
         #endregion
@@ -742,14 +788,16 @@ namespace NetModular.Lib.Data.Core
         {
             var sql = _sql.Clear(tableName);
             _logger?.LogDebug("Clear:{@sql}", sql);
-            return Execute(sql, uow: uow) > 0;
+            Execute(sql, uow: uow);
+            return true;
         }
 
         public async Task<bool> ClearAsync(IUnitOfWork uow = null, string tableName = null)
         {
             var sql = _sql.Clear(tableName);
             _logger?.LogDebug("ClearAsync:{@sql}", sql);
-            return (await ExecuteAsync(sql, uow: uow)) > 0;
+            await ExecuteAsync(sql, uow: uow);
+            return true;
         }
 
         #endregion
@@ -787,23 +835,31 @@ namespace NetModular.Lib.Data.Core
         /// <param name="value"></param>
         private void AppendValue(StringBuilder sqlBuilder, Type type, object value)
         {
-            if (type.IsEnum)
+            if (type.IsNullable())
+            {
+                type = Nullable.GetUnderlyingType(type);
+            }
+
+            if (value == null)
+            {
+                sqlBuilder.AppendFormat("NULL");
+            }
+            else if (type.IsEnum)
             {
                 sqlBuilder.AppendFormat("{0}", value.ToInt());
             }
             else if (type.IsBool())
             {
-                sqlBuilder.AppendFormat("{0}",
-                    EntityDescriptor.SqlAdapter.SqlDialect == SqlDialect.PostgreSQL
-                        ? value
-                        : value.ToInt());
+                sqlBuilder.AppendFormat("{0}", EntityDescriptor.SqlAdapter.SqlDialect == SqlDialect.PostgreSQL ? value : value.ToInt());
             }
-            else if (type.IsString() || type.IsChar() || type.IsGuid())
-                sqlBuilder.AppendFormat("'{0}'", value);
             else if (type.IsDateTime())
-                sqlBuilder.AppendFormat("'{0:yyyy-MM-dd HH:mm:ss}'", value.ToDateTime());
+            {
+                sqlBuilder.AppendFormat("'{0:yyyy-MM-dd HH:mm:ss}'", value);
+            }
             else
-                sqlBuilder.AppendFormat("{0}", value);
+            {
+                sqlBuilder.AppendFormat("'{0}'", value);
+            }
         }
 
         /// <summary>
@@ -817,13 +873,13 @@ namespace NetModular.Lib.Data.Core
                 int i = 0;
                 foreach (var column in EntityDescriptor.Columns)
                 {
-                    if (column.Name.Equals("CreatedBy") || column.Name.Equals("ModifiedBy"))
+                    var name = column.PropertyInfo.Name;
+                    if (name.Equals("CreatedBy") || name.Equals("ModifiedBy"))
                     {
                         var createdBy = (Guid)column.PropertyInfo.GetValue(entity);
                         if (createdBy == Guid.Empty)
                         {
-                            createdBy = DbContext.LoginInfo.AccountId;
-                            column.PropertyInfo.SetValue(entity, createdBy);
+                            column.PropertyInfo.SetValue(entity, DbContext.LoginInfo.AccountId);
                             i++;
                         }
                     }
@@ -845,18 +901,19 @@ namespace NetModular.Lib.Data.Core
                 int i = 0;
                 foreach (var column in EntityDescriptor.Columns)
                 {
-                    if (column.Name.Equals("ModifiedBy"))
+                    var name = column.PropertyInfo.Name;
+                    if (name.Equals("ModifiedBy"))
                     {
                         var modifiedBy = (Guid)column.PropertyInfo.GetValue(entity);
                         var accountId = DbContext.LoginInfo.AccountId;
-                        if (modifiedBy == Guid.Empty || modifiedBy != accountId)
+                        if (modifiedBy == Guid.Empty)
                         {
                             column.PropertyInfo.SetValue(entity, accountId);
                             i++;
                         }
                     }
 
-                    if (column.Name.Equals("ModifiedTime"))
+                    if (name.Equals("ModifiedTime"))
                     {
                         column.PropertyInfo.SetValue(entity, DateTime.Now);
                         i++;
@@ -864,6 +921,30 @@ namespace NetModular.Lib.Data.Core
 
                     if (i > 1)
                         break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 设置租户编号
+        /// </summary>
+        /// <param name="entity"></param>
+        private void SetTenant(TEntity entity)
+        {
+            if (EntityDescriptor.IsTenant && DbContext.LoginInfo != null)
+            {
+                foreach (var column in EntityDescriptor.Columns)
+                {
+                    var name = column.PropertyInfo.Name;
+                    if (name.Equals("TenantId"))
+                    {
+                        var tenantId = (Guid?)column.PropertyInfo.GetValue(entity);
+                        if (tenantId == null)
+                        {
+                            column.PropertyInfo.SetValue(entity, DbContext.LoginInfo.TenantId);
+                        }
+                        break;
+                    }
                 }
             }
         }

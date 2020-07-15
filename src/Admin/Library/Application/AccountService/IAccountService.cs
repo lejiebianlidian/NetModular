@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using NetModular.Lib.Auth.Abstractions;
 using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Utils.Core.Result;
 using NetModular.Module.Admin.Application.AccountService.ViewModels;
 using NetModular.Module.Admin.Domain.Account;
 using NetModular.Module.Admin.Domain.Account.Models;
@@ -73,17 +72,9 @@ namespace NetModular.Module.Admin.Application.AccountService
         Task<IResultModel> ResetPassword(Guid id);
 
         /// <summary>
-        /// 查询指定账户和平台的权限编码列表
+        /// 清除指定账户的权限列表缓存数据
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="platform"></param>
-        /// <returns></returns>
-        Task<IList<string>> QueryPermissionList(Guid id, Platform platform);
-
-        /// <summary>
-        /// 清除指定账户的缓存数据
-        /// </summary>
-        void ClearPermissionListCache(Guid id);
+        Task ClearPermissionListCache(Guid id);
 
         /// <summary>
         /// 皮肤修改
@@ -97,5 +88,19 @@ namespace NetModular.Module.Admin.Application.AccountService
         /// <param name="id"></param>
         /// <returns></returns>
         Task<AccountEntity> Get(Guid id);
+
+        /// <summary>
+        /// 账户信息同步，用于从其他扩展模块中同步账户信息，比如人事档案模块
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task<IResultModel> Sync(AccountSyncModel model);
+
+        /// <summary>
+        /// 手动激活账户
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        Task<IResultModel> Active(Guid id);
     }
 }

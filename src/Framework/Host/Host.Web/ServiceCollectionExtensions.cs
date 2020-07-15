@@ -1,19 +1,20 @@
 ﻿using System;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NetModular.Lib.Auth.Jwt;
 using NetModular.Lib.Cache.Integration;
+using NetModular.Lib.Config.Core;
 using NetModular.Lib.Data.Integration;
 using NetModular.Lib.Excel.Integration;
 using NetModular.Lib.Mapper.AutoMapper;
 using NetModular.Lib.Module.AspNetCore;
-using NetModular.Lib.Options.Core;
+using NetModular.Lib.OSS.Integration;
 using NetModular.Lib.Swagger.Core;
 using NetModular.Lib.Swagger.Core.Conventions;
 using NetModular.Lib.Utils.Core;
-using NetModular.Lib.Utils.Mvc;
 using NetModular.Lib.Validation.FluentValidation;
 using HostOptions = NetModular.Lib.Host.Web.Options.HostOptions;
 
@@ -27,14 +28,16 @@ namespace NetModular.Lib.Host.Web
         /// <param name="services"></param>
         /// <param name="hostOptions"></param>
         /// <param name="env">环境</param>
+        /// <param name="cfg"></param>
         /// <returns></returns>
-        public static IServiceCollection AddWebHost(this IServiceCollection services, HostOptions hostOptions, IHostEnvironment env)
+        public static IServiceCollection AddWebHost(this IServiceCollection services, HostOptions hostOptions, IHostEnvironment env, IConfiguration cfg)
         {
             services.AddSingleton(hostOptions);
 
-            services.AddUtils();
+            services.AddNetModularServices();
 
-            services.AddUtilsMvc();
+            //加载缓存
+            services.AddCache(cfg);
 
             //加载模块
             var modules = services.AddModules();
@@ -42,17 +45,11 @@ namespace NetModular.Lib.Host.Web
             //添加对象映射
             services.AddMappers(modules);
 
-            //添加缓存
-            services.AddCache(env.EnvironmentName);
-
             //主动或者开发模式下开启Swagger
             if (hostOptions.Swagger || env.IsDevelopment())
             {
                 services.AddSwagger(modules);
             }
-
-            //Jwt身份认证
-            services.AddJwtAuth(env.EnvironmentName);
 
             //添加MVC功能
             services.AddMvc(c =>
@@ -96,7 +93,7 @@ namespace NetModular.Lib.Host.Web
             });
 
             //添加数据库，数据库依赖ILoginInfo，所以需要在添加身份认证以及MVC后添加数据库
-            services.AddDb(env.EnvironmentName, modules);
+            services.AddDb(cfg, modules);
 
             //解决Multipart body length limit 134217728 exceeded
             services.Configure<FormOptions>(x =>
@@ -109,16 +106,22 @@ namespace NetModular.Lib.Host.Web
             services.AddHttpClient();
 
             //添加模块的自定义服务
-            services.AddModuleServices(modules, env);
+            services.AddModuleServices(modules, env, cfg);
+
+            //添加配置管理
+            services.AddConfig();
+
+            //Jwt身份认证(需要从配置中读取jwt相关配置，所以要放在配置管理后面)
+            services.AddJwtAuth();
 
             //添加模块初始化服务
-            services.AddModuleInitializerServices(modules, env);
-
-            //添加模块配置信息
-            services.AddModuleOptions(modules);
+            services.AddModuleInitializerServices(modules, env, cfg);
 
             //添加Excel相关功能
-            services.AddExcel(env.EnvironmentName);
+            services.AddExcel(cfg);
+
+            //添加OSS相关功能
+            services.AddOSS(cfg);
 
             return services;
         }

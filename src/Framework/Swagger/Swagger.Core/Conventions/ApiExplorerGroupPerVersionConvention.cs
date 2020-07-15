@@ -9,11 +9,16 @@ namespace NetModular.Lib.Swagger.Core.Conventions
     {
         public void Apply(ControllerModel controller)
         {
-            var controllerNamespace = controller.ControllerType.Namespace;
-            var arr = controllerNamespace.Split('.');
-            var moduleName = arr[arr.Length - 3];
+            if (controller.ControllerType.Namespace.IsNull())
+                return;
 
-            controller.ApiExplorer.GroupName = moduleName;
+            string[] array = controller.ControllerType.FullName.Split('.');
+            if (array.Length == 7)
+            {
+                controller.ApiExplorer.GroupName = array[2] + "_" + array[5];
+                return;
+            }
+            controller.ApiExplorer.GroupName = array[2];
         }
     }
 }

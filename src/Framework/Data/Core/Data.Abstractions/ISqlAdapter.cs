@@ -148,8 +148,10 @@ namespace NetModular.Lib.Data.Abstractions
         /// <param name="sort"></param>
         /// <param name="skip"></param>
         /// <param name="take"></param>
+        /// <param name="groupBy"></param>
+        /// <param name="having"></param>
         /// <returns></returns>
-        string GeneratePagingSql(string select, string table, string where, string sort, int skip, int take);
+        string GeneratePagingSql(string select, string table, string where, string sort, int skip, int take, string groupBy = null, string having = null);
 
         /// <summary>
         /// 生成获取第一条数据的Sql
@@ -158,8 +160,10 @@ namespace NetModular.Lib.Data.Abstractions
         /// <param name="table"></param>
         /// <param name="where"></param>
         /// <param name="sort"></param>
+        /// <param name="groupBy"></param>
+        /// <param name="having"></param>
         /// <returns></returns>
-        string GenerateFirstSql(string select, string table, string where, string sort);
+        string GenerateFirstSql(string select, string table, string where, string sort, string groupBy = null, string having = null);
 
         /// <summary>
         /// 生成有序Guid
@@ -174,6 +178,21 @@ namespace NetModular.Lib.Data.Abstractions
         /// <param name="events">创建事件</param>
         /// <param name="databaseExists">数据库是否存在</param>
         void CreateDatabase(List<IEntityDescriptor> entityDescriptors, IDatabaseCreateEvents events, out bool databaseExists);
+
+        /// <summary>
+        /// 解析列类型名称并返回默认值
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="defaultValue"></param>
+        string GetColumnTypeName(IColumnDescriptor column, out string defaultValue);
+
+        /// <summary>
+        /// 获取创建表Sql语句
+        /// </summary>
+        /// <param name="entityDescriptor"></param>
+        /// <param name="tableName">指定表名称</param>
+        /// <returns></returns>
+        string GetCreateTableSql(IEntityDescriptor entityDescriptor, string tableName = null);
 
         #endregion
     }

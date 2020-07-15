@@ -8,7 +8,7 @@ using NetModular.Lib.Utils.Core.Result;
 using NetModular.Module.Admin.Domain.Account;
 using NetModular.Module.Admin.Domain.AuditInfo;
 using NetModular.Module.Admin.Domain.AuditInfo.Models;
-using NetModular.Module.Admin.Domain.ModuleInfo;
+using NetModular.Module.Admin.Domain.Module;
 using NetModular.Module.Admin.Infrastructure.Repositories.SqlServer.Sql;
 
 namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
@@ -23,11 +23,12 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
         {
             var paging = model.Paging();
             var query = Db.Find();
+            query.WhereNotNull(model.Platform, m => m.Platform == model.Platform.Value);
             query.WhereNotNull(model.ModuleCode, m => m.Area == model.ModuleCode);
-            query.WhereNotNull(model.Controller, m => m.Controller == model.Controller);
-            query.WhereNotNull(model.Action, m => m.Action == model.Action);
-            query.WhereNotNull(model.StartTime, m => m.ExecutionTime >= model.StartTime);
-            query.WhereNotNull(model.EndTime, m => m.ExecutionTime <= model.EndTime);
+            query.WhereNotNull(model.Controller, m => m.Controller.Contains(model.Controller) || m.ControllerDesc.Contains(model.Controller));
+            query.WhereNotNull(model.Action, m => m.ActionDesc.Contains(model.Action) || m.Action.Contains(model.Action));
+            query.WhereNotNull(model.StartDate, m => m.ExecutionTime >= model.StartDate.Value.Date);
+            query.WhereNotNull(model.EndDate, m => m.ExecutionTime < model.EndDate.Value.AddDays(1).Date);
 
             if (!paging.OrderBy.Any())
             {
@@ -55,7 +56,7 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
         {
             return Db.Find(m => m.Id == id)
                 .LeftJoin<AccountEntity>((x, y) => x.AccountId == y.Id)
-                .LeftJoin<ModuleInfoEntity>((x, y, z) => x.Area == z.Code)
+                .LeftJoin<ModuleEntity>((x, y, z) => x.Area == z.Code)
                 .Select((x, y, z) => new
                 {
                     x,
@@ -68,6 +69,12 @@ namespace NetModular.Module.Admin.Infrastructure.Repositories.SqlServer
         {
             var sql = string.Format(AuditInfoSql.QueryLatestWeekPv, Db.EntityDescriptor.TableName);
             return Db.QueryAsync<ChartDataResultModel>(sql);
+        }
+
+        public Task<IList<OptionResultModel>> QueryCountByModule()
+        {
+            return Db.Find().GroupBy(m => new { m.Area }).OrderByDescending(m => m.Count())
+                .Select(m => new { Label = m.Key.Area, Value = m.Count() }).ToListAsync<OptionResultModel>();
         }
     }
 }

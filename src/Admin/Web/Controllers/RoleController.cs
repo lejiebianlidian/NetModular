@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using NetModular.Lib.Auth.Abstractions;
 using NetModular.Lib.Auth.Web.Attributes;
-using NetModular.Lib.Utils.Core.Result;
 using NetModular.Module.Admin.Application.RoleService;
 using NetModular.Module.Admin.Application.RoleService.ViewModels;
 using NetModular.Module.Admin.Domain.Role.Models;
@@ -13,7 +12,7 @@ using NetModular.Module.Admin.Domain.Role.Models;
 namespace NetModular.Module.Admin.Web.Controllers
 {
     [Description("角色管理")]
-    public class RoleController : ModuleController
+    public class RoleController : Web.ModuleController
     {
         private readonly IRoleService _service;
         public RoleController(IRoleService service)
@@ -57,31 +56,31 @@ namespace NetModular.Module.Admin.Web.Controllers
         }
 
         [HttpGet]
-        [Description("获取角色的关联菜单列表")]
-        public Task<IResultModel> MenuList([BindRequired] Guid id)
+        [Description("获取绑定页面列表")]
+        public Task<IResultModel> BindPages([BindRequired] Guid id)
         {
-            return _service.MenuList(id);
+            return _service.QueryBindPages(id);
+        }
+
+        [HttpPost]
+        [Description("绑定页面列表")]
+        public Task<IResultModel> BindPages(RolePageBindModel model)
+        {
+            return _service.BindPages(model);
+        }
+
+        [HttpGet]
+        [Description("获取绑定菜单列表")]
+        public Task<IResultModel> BindMenus([BindRequired]Guid id)
+        {
+            return _service.QueryBindMenus(id);
         }
 
         [HttpPost]
         [Description("绑定菜单")]
-        public Task<IResultModel> BindMenu(RoleMenuBindModel model)
+        public Task<IResultModel> BindMenus(RoleMenuBindModel model)
         {
-            return _service.BindMenu(model);
-        }
-
-        [HttpGet]
-        [Description("获取角色关联的菜单按钮列表")]
-        public Task<IResultModel> MenuButtonList([BindRequired]Guid id, [BindRequired]Guid menuId)
-        {
-            return _service.MenuButtonList(id, menuId);
-        }
-
-        [HttpPost]
-        [Description("绑定菜单按钮")]
-        public Task<IResultModel> BindMenuButton(RoleMenuButtonBindModel model)
-        {
-            return _service.BindMenuButton(model);
+            return _service.BindMenus(model);
         }
 
         [HttpGet]
@@ -93,16 +92,16 @@ namespace NetModular.Module.Admin.Web.Controllers
 
         [HttpGet]
         [Description("查询平台权限列表")]
-        public Task<IResultModel> PlatformPermissionList(Guid roleId, Platform platform)
+        public Task<IResultModel> BindPlatformPermissions([BindRequired]Guid roleId, Platform platform)
         {
-            return _service.PlatformPermissionList(roleId, platform);
+            return _service.QueryPlatformPermissions(roleId, platform);
         }
 
         [HttpPost]
         [Description("绑定平台权限列表")]
-        public Task<IResultModel> PlatformPermissionBind(RolePlatformPermissionBindModel model)
+        public Task<IResultModel> BindPlatformPermissions(RolePermissionBindModel model)
         {
-            return _service.PlatformPermissionBind(model);
+            return _service.BindPlatformPermissions(model);
         }
     }
 }

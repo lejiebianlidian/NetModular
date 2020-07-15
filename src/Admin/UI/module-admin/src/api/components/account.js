@@ -5,28 +5,11 @@ export default name => {
   const crud = $http.crud(root)
 
   const urls = {
-    getVerifyCode: root + 'verifycode',
-    login: root + 'login',
     updatePassword: root + 'updatepassword',
-    getLoginInfo: root + 'logininfo',
     bindRole: root + 'bindrole',
     resetPassword: root + 'ResetPassword',
-    skinUpdate: root + 'SkinUpdate'
-  }
-
-  /**
-   * @description 获取验证码
-   */
-  const getVerifyCode = () => {
-    return $http.get(urls.getVerifyCode)
-  }
-
-  /**
-   * @description 登录
-   * @param {*} params
-   */
-  const login = async params => {
-    return $http.post(urls.login, params)
+    skinUpdate: root + 'SkinUpdate',
+    active: root + 'Active'
   }
 
   /**
@@ -34,13 +17,6 @@ export default name => {
    */
   const updatePassword = params => {
     return $http.post(urls.updatePassword, params)
-  }
-
-  /**
-   * @description 获取登录账户信息
-   */
-  const getLoginInfo = () => {
-    return $http.get(urls.getLoginInfo)
   }
 
   /**
@@ -65,15 +41,18 @@ export default name => {
     return $http.post(urls.skinUpdate, params)
   }
 
+  //激活
+  const active = id => {
+    return $http.post(urls.active + '?id=' + id)
+  }
+
   // 接口集合
   return {
     ...crud,
-    getVerifyCode,
-    login,
     updatePassword,
-    getLoginInfo,
     bindRole,
     resetPassword,
-    skinUpdate
+    skinUpdate,
+    active
   }
 }

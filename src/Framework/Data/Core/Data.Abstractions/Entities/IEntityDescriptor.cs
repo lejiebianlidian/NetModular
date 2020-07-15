@@ -9,6 +9,16 @@ namespace NetModular.Lib.Data.Abstractions.Entities
     public interface IEntityDescriptor
     {
         /// <summary>
+        /// 数据库上下文
+        /// </summary>
+        IDbContext DbContext { get; }
+
+        /// <summary>
+        /// 数据集
+        /// </summary>
+        IDbSet DbSet { get; set; }
+
+        /// <summary>
         /// 数据库配置信息
         /// </summary>
         DbModuleOptions DbOptions { get; }
@@ -67,5 +77,10 @@ namespace NetModular.Lib.Data.Abstractions.Entities
         /// 是否是EntityBase类型实体
         /// </summary>
         bool IsEntityBase { get; }
+
+        /// <summary>
+        /// 是否是多租户模式
+        /// </summary>
+        bool IsTenant { get; }
     }
 }

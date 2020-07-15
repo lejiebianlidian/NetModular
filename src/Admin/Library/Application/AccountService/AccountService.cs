@@ -4,19 +4,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using NetModular.Lib.Auth.Abstractions;
+using NetModular.Lib.Auth.Abstractions.PasswordHandler;
 using NetModular.Lib.Cache.Abstractions;
+using NetModular.Lib.Config.Abstractions;
 using NetModular.Lib.Data.Abstractions;
-using NetModular.Lib.Utils.Core.Extensions;
-using NetModular.Lib.Utils.Core.Result;
 using NetModular.Module.Admin.Application.AccountService.ViewModels;
 using NetModular.Module.Admin.Domain.Account;
 using NetModular.Module.Admin.Domain.Account.Models;
 using NetModular.Module.Admin.Domain.AccountConfig;
 using NetModular.Module.Admin.Domain.AccountRole;
-using NetModular.Module.Admin.Domain.Permission;
 using NetModular.Module.Admin.Domain.Role;
+using NetModular.Module.Admin.Domain.RolePermission;
 using NetModular.Module.Admin.Infrastructure;
-using NetModular.Module.Admin.Infrastructure.PasswordHandler;
+using NetModular.Module.Admin.Infrastructure.AccountPermissionResolver;
 using NetModular.Module.Admin.Infrastructure.Repositories;
 
 namespace NetModular.Module.Admin.Application.AccountService
@@ -29,23 +29,21 @@ namespace NetModular.Module.Admin.Application.AccountService
         private readonly IAccountConfigRepository _accountConfigRepository;
         private readonly IAccountRoleRepository _accountRoleRepository;
         private readonly IRoleRepository _roleRepository;
-        private readonly IPermissionRepository _permissionRepository;
         private readonly AdminDbContext _dbContext;
         private readonly IPasswordHandler _passwordHandler;
-        private readonly AdminOptions _options;
+        private readonly IConfigProvider _configProvider;
 
-        public AccountService(ICacheHandler cache, IMapper mapper, IAccountRepository accountRepository, IAccountRoleRepository accountRoleRepository, IRoleRepository roleRepository, IPermissionRepository permissionRepository, IAccountConfigRepository accountConfigRepository, AdminDbContext dbContext, IPasswordHandler passwordHandler, AdminOptions options)
+        public AccountService(ICacheHandler cache, IMapper mapper, IAccountRepository accountRepository, IAccountRoleRepository accountRoleRepository, IRoleRepository roleRepository, IAccountConfigRepository accountConfigRepository, AdminDbContext dbContext, IPasswordHandler passwordHandler, IConfigProvider configProvider, IRolePermissionRepository rolePermissionRepository, IAccountPermissionResolver permissionResolver)
         {
             _cache = cache;
             _mapper = mapper;
             _accountRepository = accountRepository;
             _accountRoleRepository = accountRoleRepository;
             _roleRepository = roleRepository;
-            _permissionRepository = permissionRepository;
             _accountConfigRepository = accountConfigRepository;
             _dbContext = dbContext;
             _passwordHandler = passwordHandler;
-            _options = options;
+            _configProvider = configProvider;
         }
 
         public async Task<IResultModel> Query(AccountQueryModel model)
@@ -75,20 +73,11 @@ namespace NetModular.Module.Admin.Application.AccountService
             if (!exists.Successful)
                 return exists;
 
-            //默认未激活状态，用户首次登录激活
-            account.Status = AccountStatus.Inactive;
-
             //设置默认密码
             if (account.Password.IsNull())
             {
-                if (_options != null && _options.DefaultPassword.NotNull())
-                {
-                    account.Password = _options.DefaultPassword;
-                }
-                else
-                {
-                    account.Password = "123456";
-                }
+                var config = _configProvider.Get<AdminConfig>();
+                account.Password = config.DefaultPassword.NotNull() ? config.DefaultPassword : "123456";
             }
 
             account.Password = _passwordHandler.Encrypt(account.UserName, account.Password);
@@ -170,7 +159,8 @@ namespace NetModular.Module.Admin.Application.AccountService
                         if (result)
                         {
                             uow.Commit();
-                            ClearPermissionListCache(account.Id);
+
+                            await ClearPermissionListCache(account.Id);
 
                             await ClearCache(true, entity.Id);
 
@@ -256,14 +246,8 @@ namespace NetModular.Module.Admin.Application.AccountService
             if (account.IsLock)
                 return ResultModel.Failed("账户锁定，不允许重置密码");
 
-            if (_options != null && _options.DefaultPassword.NotNull())
-            {
-                account.Password = _options.DefaultPassword;
-            }
-            else
-            {
-                account.Password = "123456";
-            }
+            var config = _configProvider.Get<AdminConfig>();
+            account.Password = config.DefaultPassword.NotNull() ? config.DefaultPassword : "123456";
 
             var newPassword = _passwordHandler.Encrypt(account.UserName, account.Password);
             var result = await _accountRepository.UpdatePassword(id, newPassword);
@@ -272,30 +256,19 @@ namespace NetModular.Module.Admin.Application.AccountService
             return ResultModel.Result(result);
         }
 
-        public async Task<IList<string>> QueryPermissionList(Guid id, Platform platform)
-        {
-            var account = await Get(id);
-            if (account == null || account.Deleted)
-                return new List<string>();
-
-            var key = string.Format(CacheKeys.AccountPermissions, id, platform.ToInt());
-
-            if (!_cache.TryGetValue(key, out IList<string> list))
-            {
-                list = await _permissionRepository.QueryCodeByAccount(id, platform);
-                await _cache.SetAsync(key, list);
-            }
-
-            return list;
-        }
-
-        public void ClearPermissionListCache(Guid id)
+        public Task ClearPermissionListCache(Guid id)
         {
             var list = EnumExtensions.ToResult<Platform>();
-            foreach (var option in list)
+            var tasks = new List<Task>();
+            foreach (var t in list)
             {
-                _cache.RemoveAsync(string.Format(CacheKeys.AccountPermissions, id, option.ToInt())).Wait();
+                tasks.Add(_cache.RemoveAsync($"{CacheKeys.ACCOUNT_PERMISSIONS}{id}:{t.Value.ToInt()}"));
+                tasks.Add(_cache.RemoveAsync($"{CacheKeys.ACCOUNT_PAGES}{id}"));
+                tasks.Add(_cache.RemoveAsync($"{CacheKeys.ACCOUNT_BUTTONS}{id}"));
+                tasks.Add(_cache.RemoveAsync($"{CacheKeys.ACCOUNT_MENUS}{id}"));
             }
+
+            return Task.WhenAll(tasks);
         }
 
         public async Task<IResultModel> SkinUpdate(Guid id, AccountSkinUpdateModel model)
@@ -329,7 +302,7 @@ namespace NetModular.Module.Admin.Application.AccountService
 
         public async Task<AccountEntity> Get(Guid id)
         {
-            var key = string.Format(CacheKeys.Account, id);
+            var key = CacheKeys.ACCOUNT + id;
             if (_cache.TryGetValue(key, out AccountEntity account))
                 return account;
 
@@ -340,6 +313,66 @@ namespace NetModular.Module.Admin.Application.AccountService
             }
 
             return account;
+        }
+
+        public async Task<IResultModel> Sync(AccountSyncModel model)
+        {
+            var entity = await _accountRepository.GetAsync(model.Id);
+            if (entity == null)
+                return ResultModel.Failed("账户不存在！");
+
+            var account = _mapper.Map(model, entity);
+
+            var exists = await Exists(account);
+            if (!exists.Successful)
+                return exists;
+
+            if (model.NewPassword.NotNull())
+            {
+                account.Password = _passwordHandler.Encrypt(account.UserName, model.NewPassword);
+            }
+
+            using (var uow = _dbContext.NewUnitOfWork())
+            {
+                var result = await _accountRepository.UpdateAsync(account, uow);
+                if (result)
+                {
+                    if (model.Roles != null)
+                    {
+                        result = await _accountRoleRepository.DeleteByAccount(account.Id, uow);
+                    }
+                    if (model.Roles != null && model.Roles.Any())
+                    {
+                        var accountRoleList = model.Roles.Select(m => new AccountRoleEntity { AccountId = account.Id, RoleId = m }).ToList();
+                        result = await _accountRoleRepository.AddAsync(accountRoleList, uow);
+                    }
+
+                    if (result)
+                    {
+                        uow.Commit();
+
+                        await ClearPermissionListCache(account.Id);
+
+                        await ClearCache(true, entity.Id);
+
+                        return ResultModel.Success();
+                    }
+                }
+            }
+
+            return ResultModel.Failed();
+        }
+
+        public async Task<IResultModel> Active(Guid id)
+        {
+            var exists = await _accountRepository.ExistsAsync(id);
+            if (!exists)
+            {
+                return ResultModel.Failed("账户不存在");
+            }
+
+            var result = await _accountRepository.UpdateAccountStatus(id, AccountStatus.Active);
+            return ResultModel.Success(result);
         }
 
         /// <summary>
@@ -371,7 +404,7 @@ namespace NetModular.Module.Admin.Application.AccountService
         {
             if (result)
             {
-                return _cache.RemoveAsync(string.Format(CacheKeys.Account, id));
+                return _cache.RemoveAsync(CacheKeys.ACCOUNT + id);
             }
 
             return Task.CompletedTask;

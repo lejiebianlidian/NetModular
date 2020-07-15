@@ -3,15 +3,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using NetModular.Lib.Auth.Web.Attributes;
-using NetModular.Lib.Module.AspNetCore.Attributes;
-using NetModular.Lib.Utils.Core.Result;
 using NetModular.Module.Admin.Application.AuditInfoService;
 using NetModular.Module.Admin.Domain.AuditInfo.Models;
 
 namespace NetModular.Module.Admin.Web.Controllers
 {
     [Description("审计信息")]
-    public class AuditInfoController : ModuleController
+    public class AuditInfoController : Web.ModuleController
     {
         private readonly IAuditInfoService _service;
 

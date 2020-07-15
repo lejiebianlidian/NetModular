@@ -1,81 +1,58 @@
 ﻿using System.ComponentModel;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using NetModular.Lib.Auth.Web.Attributes;
-using NetModular.Lib.Utils.Core.Extensions;
-using NetModular.Lib.Utils.Core.Result;
+using NetModular.Lib.Config.Abstractions;
+using NetModular.Lib.OSS.Abstractions;
 using NetModular.Module.Admin.Application.ConfigService;
 using NetModular.Module.Admin.Application.ConfigService.ViewModels;
-using NetModular.Module.Admin.Domain.Config;
-using NetModular.Module.Admin.Domain.Config.Models;
 
 namespace NetModular.Module.Admin.Web.Controllers
 {
     [Description("配置管理")]
-    public class ConfigController : ModuleController
+    public class ConfigController : Web.ModuleController
     {
         private readonly IConfigService _service;
+        private readonly IConfigCollection _configCollection;
+        private readonly IFileStorageProvider _fileStorageProvider;
 
-        public ConfigController(IConfigService service)
+        public ConfigController(IConfigService service, IConfigCollection configCollection, IFileStorageProvider fileStorageProvider)
         {
             _service = service;
+            _configCollection = configCollection;
+            _fileStorageProvider = fileStorageProvider;
         }
 
         [HttpGet]
-        [Description("查询")]
-        public Task<IResultModel> Query([FromQuery]ConfigQueryModel model)
+        [AllowAnonymous]
+        [DisableAuditing]
+        [Description("UI配置信息")]
+        public IResultModel UI()
         {
-            return _service.Query(model);
-        }
-
-        [HttpPost]
-        [Description("添加")]
-        public Task<IResultModel> Add(ConfigAddModel model)
-        {
-            return _service.Add(model);
-        }
-
-        [HttpDelete]
-        [Description("删除")]
-        public Task<IResultModel> Delete([BindRequired]int id)
-        {
-            return _service.Delete(id);
+            var result = _service.GetUI();
+            result.System.Logo = _fileStorageProvider.GetUrl(result.System.Logo);
+            return ResultModel.Success(result);
         }
 
         [HttpGet]
         [Description("编辑")]
-        public Task<IResultModel> Edit([BindRequired]int id)
+        public IResultModel Edit(string code, ConfigType type)
         {
-            return _service.Edit(id);
+            return _service.Edit(code, type);
         }
 
         [HttpPost]
-        [Description("修改")]
-        public Task<IResultModel> Update(ConfigUpdateModel model)
+        [Description("保存")]
+        public IResultModel Update(ConfigUpdateModel model)
         {
             return _service.Update(model);
         }
 
         [HttpGet]
-        [Description("根据Key获取值")]
-        [Common]
-        public async Task<IResultModel> GetValue(string key, ConfigType type = ConfigType.System, string moduleCode = null)
+        [Description("配置描述符列表")]
+        public IResultModel Descriptors()
         {
-            if (key.IsNull())
-                return ResultModel.Success(string.Empty);
-
-            if (type == ConfigType.Module && moduleCode.IsNull())
-                return ResultModel.Success(string.Empty);
-
-            return await _service.GetValueByKey(key, type, moduleCode);
-        }
-
-        [HttpGet]
-        [Common]
-        public IResultModel TypeSelect()
-        {
-            return ResultModel.Success(EnumExtensions.ToResult<ConfigType>());
+            return ResultModel.Success(_configCollection);
         }
     }
 }

@@ -3,6 +3,8 @@ using System.Linq;
 using System.Text;
 using NetModular.Lib.Data.Abstractions.Entities;
 using NetModular.Lib.Data.Abstractions.Enums;
+using NetModular.Lib.Data.Abstractions.Options;
+using NetModular.Lib.Data.Core.Extensions;
 
 namespace NetModular.Lib.Data.Core.Entities
 {
@@ -10,10 +12,12 @@ namespace NetModular.Lib.Data.Core.Entities
     {
         private readonly IEntityDescriptor _descriptor;
         private readonly IPrimaryKeyDescriptor _primaryKey;
+        private readonly DbOptions _dbOptions;
 
-        public EntitySqlBuilder(IEntityDescriptor descriptor)
+        public EntitySqlBuilder(IEntityDescriptor descriptor, DbOptions dbOptions)
         {
             _descriptor = descriptor;
+            _dbOptions = dbOptions;
             _primaryKey = descriptor.PrimaryKey;
         }
 
@@ -24,11 +28,11 @@ namespace NetModular.Lib.Data.Core.Entities
             var deleteSql = BuildDeleteSql(out string deleteSingleSql);
             var softDeleteSql = BuildSoftDeleteSql(out string softDeleteSingleSql);
             var updateSql = BuildUpdateSql(out string updateSingleSql);
-            var querySql = BuildQuerySql(out string getSql, out string getAdnRowLockSql);
+            var querySql = BuildQuerySql(out string getSql, out string getAndRowLockSql, out string getAndNoLockSql);
             var existsSql = BuildExistsSql();
 
             return new EntitySql(_descriptor, insertSql, batchInsertSql, deleteSingleSql, deleteSql, softDeleteSql,
-                softDeleteSingleSql, updateSingleSql, updateSql, getSql, getAdnRowLockSql, querySql, existsSql, batchInsertColumnList);
+                softDeleteSingleSql, updateSingleSql, updateSql, getSql, getAndRowLockSql, getAndNoLockSql, querySql, existsSql, batchInsertColumnList);
         }
 
         #region ==Private Methods==
@@ -54,6 +58,20 @@ namespace NetModular.Lib.Data.Core.Entities
                 sb.Append(",");
 
                 _descriptor.SqlAdapter.AppendParameter(valuesSql, col.PropertyInfo.Name);
+
+                //针对PostgreSQL数据库的json和jsonb类型字段的处理
+                if (_descriptor.SqlAdapter.SqlDialect == SqlDialect.PostgreSQL)
+                {
+                    if (col.TypeName.EqualsIgnoreCase("jsonb"))
+                    {
+                        valuesSql.Append("::jsonb");
+                    }
+                    else if (col.TypeName.EqualsIgnoreCase("json"))
+                    {
+                        valuesSql.Append("::json");
+                    }
+                }
+
                 valuesSql.Append(",");
 
                 batchInsertColumnList.Add(col);
@@ -109,9 +127,9 @@ namespace NetModular.Lib.Data.Core.Entities
             }
 
             var sb = new StringBuilder("UPDATE {0} SET ");
-            sb.AppendFormat("{0}={1},", AppendQuote("Deleted"), _descriptor.SqlAdapter.SqlDialect == SqlDialect.PostgreSQL ? "TRUE" : "1");
-            sb.AppendFormat("{0}={1},", AppendQuote("DeletedTime"), AppendParameter("DeletedTime"));
-            sb.AppendFormat("{0}={1} ", AppendQuote("DeletedBy"), AppendParameter("DeletedBy"));
+            sb.AppendFormat("{0}={1},", AppendQuote(_descriptor.GetDeletedColumnName()), _descriptor.SqlAdapter.SqlDialect == SqlDialect.PostgreSQL ? "TRUE" : "1");
+            sb.AppendFormat("{0}={1},", AppendQuote(_descriptor.GetDeletedTimeColumnName()), AppendParameter("DeletedTime"));
+            sb.AppendFormat("{0}={1} ", AppendQuote(_descriptor.GetDeletedByColumnName()), AppendParameter("DeletedBy"));
 
             var softDeleteSql = sb.ToString();
 
@@ -138,6 +156,20 @@ namespace NetModular.Lib.Data.Core.Entities
                 foreach (var col in columns)
                 {
                     sb.AppendFormat("{0}={1}", AppendQuote(col.Name), AppendParameter(col.PropertyInfo.Name));
+
+                    //针对PostgreSQL数据库的json和jsonb类型字段的处理
+                    if (_descriptor.SqlAdapter.SqlDialect == SqlDialect.PostgreSQL)
+                    {
+                        if (col.TypeName.EqualsIgnoreCase("jsonb"))
+                        {
+                            sb.Append("::jsonb");
+                        }
+                        else if (col.TypeName.EqualsIgnoreCase("json"))
+                        {
+                            sb.Append("::json");
+                        }
+                    }
+
                     sb.Append(",");
                 }
 
@@ -154,7 +186,7 @@ namespace NetModular.Lib.Data.Core.Entities
         /// <summary>
         /// 设置查询语句
         /// </summary>
-        private string BuildQuerySql(out string getSql, out string getAndRowLockSql)
+        private string BuildQuerySql(out string getSql, out string getAndRowLockSql, out string getAndNoLockSql)
         {
             var sb = new StringBuilder("SELECT ");
             for (var i = 0; i < _descriptor.Columns.Count; i++)
@@ -172,23 +204,28 @@ namespace NetModular.Lib.Data.Core.Entities
             var querySql = sb.ToString();
             getSql = querySql;
             getAndRowLockSql = querySql;
+            getAndNoLockSql = querySql;
             // SqlServer行锁
             if (_descriptor.SqlAdapter.SqlDialect == SqlDialect.SqlServer)
             {
                 getAndRowLockSql += " WITH (ROWLOCK, UPDLOCK) ";
+                getAndNoLockSql += "WITH (NOLOCK) ";
             }
 
             if (!_primaryKey.IsNo())
             {
-                getSql += $" WHERE {AppendQuote(_primaryKey.Name)}={AppendParameter(_primaryKey.PropertyInfo.Name)} ";
-                getAndRowLockSql += $" WHERE {AppendQuote(_primaryKey.Name)}={AppendParameter(_primaryKey.PropertyInfo.Name)} ";
+                var appendSql = $" WHERE {AppendQuote(_primaryKey.Name)}={AppendParameter(_primaryKey.PropertyInfo.Name)} ";
+                getSql += appendSql;
+                getAndRowLockSql += appendSql;
+                getAndNoLockSql += appendSql;
 
                 if (_descriptor.SoftDelete)
                 {
                     var val = _descriptor.SqlAdapter.SqlDialect == SqlDialect.PostgreSQL ? "FALSE" : "0";
-
-                    getSql += $" AND {AppendQuote("Deleted")}={val} ";
-                    getAndRowLockSql += $" AND {AppendQuote("Deleted")}={val} ";
+                    appendSql = $" AND {AppendQuote(_descriptor.GetDeletedColumnName())}={val} ";
+                    getSql += appendSql;
+                    getAndRowLockSql += appendSql;
+                    getAndNoLockSql += appendSql;
                 }
 
                 //MySql和PostgreSQL行锁
@@ -214,7 +251,7 @@ namespace NetModular.Lib.Data.Core.Entities
             var sql = $"SELECT COUNT(0) FROM {{0}} WHERE {AppendQuote(_primaryKey.Name)}={AppendParameter(_primaryKey.PropertyInfo.Name)}";
             if (_descriptor.SoftDelete)
             {
-                sql += $" AND {AppendQuote("Deleted")}={(_descriptor.SqlAdapter.SqlDialect == SqlDialect.PostgreSQL ? "FALSE" : "0")} ";
+                sql += $" AND {AppendQuote(_descriptor.GetDeletedColumnName())}={(_descriptor.SqlAdapter.SqlDialect == SqlDialect.PostgreSQL ? "FALSE" : "0")} ";
             }
 
             return sql;

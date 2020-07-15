@@ -6,7 +6,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using NetModular.Lib.Utils.Core.Result;
 
 namespace NetModular.Lib.Host.Web.Middleware
 {
@@ -14,7 +13,7 @@ namespace NetModular.Lib.Host.Web.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly IHostEnvironment _env;
-        private readonly ILogger _logger;
+        private readonly ILogger<ExceptionHandleMiddleware> _logger;
         public ExceptionHandleMiddleware(RequestDelegate next, IHostEnvironment env, ILogger<ExceptionHandleMiddleware> logger)
         {
             _next = next;

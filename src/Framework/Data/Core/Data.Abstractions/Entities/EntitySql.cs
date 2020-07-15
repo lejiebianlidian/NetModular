@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using NetModular.Lib.Data.Abstractions.Enums;
-using NetModular.Lib.Utils.Core.Extensions;
 
 namespace NetModular.Lib.Data.Abstractions.Entities
 {
@@ -62,6 +61,11 @@ namespace NetModular.Lib.Data.Abstractions.Entities
         private readonly string _getAndRowLock;
 
         /// <summary>
+        /// 查询单条语句并排除锁(仅SqlServer可用)
+        /// </summary>
+        private readonly string _getAndNoLock;
+
+        /// <summary>
         /// 查询语句
         /// </summary>
         private readonly string _query;
@@ -77,7 +81,7 @@ namespace NetModular.Lib.Data.Abstractions.Entities
 
         #endregion
 
-        public EntitySql(IEntityDescriptor descriptor, string insert, string batchInsert, string deleteSingle, string delete, string softDelete, string softDeleteSingle, string updateSingle, string update, string get, string getAndRowLock, string query, string exists, List<IColumnDescriptor> batchInsertColumnList)
+        public EntitySql(IEntityDescriptor descriptor, string insert, string batchInsert, string deleteSingle, string delete, string softDelete, string softDeleteSingle, string updateSingle, string update, string get, string getAndRowLock, string getAndNoLockSql, string query, string exists, List<IColumnDescriptor> batchInsertColumnList)
         {
             _descriptor = descriptor;
             _adapter = _descriptor.SqlAdapter;
@@ -91,6 +95,7 @@ namespace NetModular.Lib.Data.Abstractions.Entities
             _update = update;
             _get = get;
             _getAndRowLock = getAndRowLock;
+            _getAndNoLock = getAndNoLockSql;
             _query = query;
             _exists = exists;
             BatchInsertColumnList = batchInsertColumnList;
@@ -310,7 +315,7 @@ namespace NetModular.Lib.Data.Abstractions.Entities
 
         #endregion
 
-        #region ==查询单个实体==
+        #region ==查询单个实体带锁==
 
         private string _defaultGetAdnRowLock;
 
@@ -330,6 +335,30 @@ namespace NetModular.Lib.Data.Abstractions.Entities
             }
 
             return _defaultGetAdnRowLock;
+        }
+
+        #endregion
+
+        #region ==查询单个实体无锁==
+
+        private string _defaultGetAndNoLock;
+
+        /// <summary>
+        /// 获取单个实体语句(行锁)
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
+        public string GetAndNoLock(string tableName)
+        {
+            if (tableName.NotNull())
+                return string.Format(_getAndNoLock, GetTableName(tableName));
+
+            if (_defaultGetAndNoLock.IsNull())
+            {
+                _defaultGetAndNoLock = string.Format(_getAndNoLock, GetTableName(_descriptor.TableName));
+            }
+
+            return _defaultGetAndNoLock;
         }
 
         #endregion

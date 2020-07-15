@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NetModular.Lib.Module.Abstractions;
-using NetModular.Lib.Utils.Core;
 
 namespace NetModular.Lib.Module.GenericHost
 {
@@ -41,12 +41,12 @@ namespace NetModular.Lib.Module.GenericHost
         /// <param name="modules"></param>
         /// <param name="env"></param>
         /// <returns></returns>
-        public static IServiceCollection AddModuleServices(this IServiceCollection services, IModuleCollection modules, IHostEnvironment env)
+        public static IServiceCollection AddModuleServices(this IServiceCollection services, IModuleCollection modules, IHostEnvironment env, IConfiguration cfg)
         {
             foreach (var module in modules)
             {
                 //加载模块初始化器
-                ((ModuleDescriptor)module).ServicesConfigurator?.Configure(services, modules, env);
+                ((ModuleDescriptor)module).ServicesConfigurator?.Configure(services, modules, env, cfg);
             }
 
             return services;
@@ -70,21 +70,6 @@ namespace NetModular.Lib.Module.GenericHost
                     services.Add(new ServiceDescriptor(serviceType, implementationType, ServiceLifetime.Singleton));
                 }
             }
-        }
-
-        /// <summary>
-        /// 自动注入单例服务
-        /// </summary>
-        /// <param name="services"></param>
-        /// <param name="module"></param>
-        private static void AddSingleton(this IServiceCollection services, IModuleDescriptor module)
-        {
-            if (module.AssemblyDescriptor == null)
-                return;
-
-            services.AddSingletonFromAssembly(module.AssemblyDescriptor.Domain);
-            services.AddSingletonFromAssembly(module.AssemblyDescriptor.Infrastructure);
-            services.AddSingletonFromAssembly(module.AssemblyDescriptor.Application);
         }
     }
 }

@@ -1,12 +1,12 @@
 ﻿using NetModular.Lib.Quartz.Abstractions;
 using Quartz;
 using System;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NetModular.Lib.Config.Abstractions;
 using Quartz.Impl;
 
 namespace NetModular.Lib.Quartz.Core
@@ -26,10 +26,15 @@ namespace NetModular.Lib.Quartz.Core
         /// <summary>
         /// 启动
         /// </summary>
-        public async Task Start(NameValueCollection props, CancellationToken cancellation = default)
+        public async Task Start(CancellationToken cancellation = default)
         {
+            var configProvider = _container.GetService<IConfigProvider>();
+            var config = configProvider.Get<QuartzConfig>();
+            if (!config.Enabled)
+                return;
+
             //调度器工厂
-            var factory = new StdSchedulerFactory(props);
+            var factory = new StdSchedulerFactory(config.ToProps());
 
             //创建一个调度器
             _scheduler = await factory.GetScheduler(cancellation);
@@ -57,12 +62,23 @@ namespace NetModular.Lib.Quartz.Core
         /// </summary>
         public async Task Stop(CancellationToken cancellation = default)
         {
-            if (_scheduler == null)
+            if (_scheduler == null || _scheduler.IsShutdown)
                 return;
 
             await _scheduler.Shutdown(true, cancellation);
 
             _logger.LogInformation("Quartz server stopped");
+        }
+
+        /// <summary>
+        /// 重启
+        /// </summary>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        public async Task Restart(CancellationToken cancellation = default)
+        {
+            await Stop(cancellation);
+            await Start(cancellation);
         }
 
         /// <summary>

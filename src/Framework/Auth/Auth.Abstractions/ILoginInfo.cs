@@ -8,6 +8,11 @@ namespace NetModular.Lib.Auth.Abstractions
     public interface ILoginInfo
     {
         /// <summary>
+        /// 租户编号
+        /// </summary>
+        Guid? TenantId { get; }
+
+        /// <summary>
         /// 账户编号
         /// </summary>
         Guid AccountId { get; }
@@ -46,5 +51,10 @@ namespace NetModular.Lib.Auth.Abstractions
         /// 登录时间戳
         /// </summary>
         long LoginTime { get; }
+
+        /// <summary>
+        /// 获取当前用户请求的User-Agent
+        /// </summary>
+        string UserAgent { get; }
     }
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using NetModular.Lib.Utils.Core.Attributes;
 using NetModular.Lib.Utils.Core.Encrypt;
-using NetModular.Lib.Utils.Core.Result;
+using NetModular.Lib.Utils.Core.Files;
 using FileInfo = NetModular.Lib.Utils.Core.Files.FileInfo;
 
 namespace NetModular.Lib.Utils.Mvc.Helpers
@@ -39,8 +39,19 @@ namespace NetModular.Lib.Utils.Mvc.Helpers
             if (model.FormFile == null || model.FormFile.Length < 1)
                 return result.Failed("请选择文件!");
 
-            var resultModel = await UploadSave(model.FormFile, model.RelativePath, model.RootPath, cancellationToken);
+            var name = model.FileName.IsNull() ? model.FormFile.FileName : model.FileName;
+            var size = model.FormFile.Length;
+            var fileInfo = new FileInfo(name, size);
 
+            if (model.MaxSize > 0 && model.MaxSize < size)
+                return result.Failed($"文件大小不能超过{new FileSize(model.MaxSize).ToString()}");
+
+            if (model.LimitExt != null && !model.LimitExt.Any(m => m.EqualsIgnoreCase(fileInfo.Ext)))
+                return result.Failed($"文件格式无效，请上传{model.LimitExt.Aggregate((x, y) => x + "," + y)}格式的文件");
+
+            var date = DateTime.Now;
+            fileInfo.Path = Path.Combine(model.RelativePath, date.ToString("yyyy"), date.ToString("MM"), date.ToString("dd"));
+            var resultModel = await UploadSave(model.FormFile, fileInfo, model.RootPath, model.CalcMd5, cancellationToken);
             return result.Success(resultModel);
         }
 
@@ -50,51 +61,45 @@ namespace NetModular.Lib.Utils.Mvc.Helpers
         /// <param name="model"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<IResultModel<IList<FileInfo>>> Upload(FileUploadMultipleModel model, CancellationToken cancellationToken = default)
+        public Task<IResultModel<IList<FileInfo>>> Upload(FileUploadMultipleModel model, CancellationToken cancellationToken = default)
         {
-            var result = new ResultModel<IList<FileInfo>>();
+            throw new NotImplementedException("多文件上传暂未实现");
 
-            if (model.FormFiles == null || !model.FormFiles.Any())
-            {
-                if (model.Request.Form.Files != null && model.Request.Form.Files.Any())
-                {
-                    model.FormFiles = model.Request.Form.Files.ToList();
-                }
-            }
+            //var result = new ResultModel<IList<FileInfo>>();
 
-            if (model.FormFiles == null || !model.FormFiles.Any())
-                return result.Failed("请选择文件!");
+            //if (model.FormFiles == null || !model.FormFiles.Any())
+            //{
+            //    if (model.Request.Form.Files != null && model.Request.Form.Files.Any())
+            //    {
+            //        model.FormFiles = model.Request.Form.Files.ToList();
+            //    }
+            //}
 
-            var tasks = new List<Task<FileInfo>>();
-            foreach (var formFile in model.FormFiles)
-            {
-                tasks.Add(UploadSave(formFile, model.RelativePath, model.RootPath, cancellationToken));
-            }
+            //if (model.FormFiles == null || !model.FormFiles.Any())
+            //    return result.Failed("请选择文件!");
 
-            var list = await Task.WhenAll(tasks);
+            //var tasks = new List<Task<FileInfo>>();
+            //foreach (var formFile in model.FormFiles)
+            //{
+            //    tasks.Add(UploadSave(formFile, model.RelativePath, model.RootPath, cancellationToken));
+            //}
 
-            return result.Success(list);
+            //var list = await Task.WhenAll(tasks);
+
+            //return result.Success(list);
         }
 
         /// <summary>
         /// 保存文件
         /// </summary>
         /// <param name="formFile">文件</param>
-        /// <param name="relativePath">相对目录</param>
+        /// <param name="fileInfo">文件信息</param>
         /// <param name="rootPath">根目录</param>
+        /// <param name="calcMd5"></param>
         /// <param name="cancellationToken">取消token</param>
         /// <returns></returns>
-        private async Task<FileInfo> UploadSave(IFormFile formFile, string relativePath, string rootPath, CancellationToken cancellationToken = default)
+        private async Task<FileInfo> UploadSave(IFormFile formFile, FileInfo fileInfo, string rootPath, bool calcMd5, CancellationToken cancellationToken = default)
         {
-            var date = DateTime.Now;
-
-            var name = formFile.FileName;
-            var size = formFile.Length;
-            var fileInfo = new FileInfo(name, size)
-            {
-                Path = Path.Combine(relativePath, date.ToString("yyyy"), date.ToString("MM"), date.ToString("dd")),
-            };
-
             fileInfo.SaveName = $"{Guid.NewGuid().ToString().Replace("-", "")}.{fileInfo.Ext}";
 
             var fullDir = Path.Combine(rootPath, fileInfo.Path);
@@ -105,7 +110,11 @@ namespace NetModular.Lib.Utils.Mvc.Helpers
 
             //写入
             var fullPath = Path.Combine(fullDir, fileInfo.SaveName);
-            fileInfo.Md5 = await SaveWidthMd5(formFile, fullPath, cancellationToken);
+
+            if (calcMd5)
+                fileInfo.Md5 = await SaveWidthMd5(formFile, fullPath, cancellationToken);
+            else
+                await Save(formFile, fullPath, cancellationToken);
 
             return fileInfo;
         }
@@ -117,13 +126,11 @@ namespace NetModular.Lib.Utils.Mvc.Helpers
         /// <param name="savePath"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task Save(IFormFile formFile, string savePath, CancellationToken cancellationToken = default)
+        public Task Save(IFormFile formFile, string savePath, CancellationToken cancellationToken = default)
         {
             //写入
-            using (var stream = new FileStream(savePath, FileMode.Create))
-            {
-                await formFile.CopyToAsync(stream, cancellationToken);
-            }
+            using var stream = new FileStream(savePath, FileMode.Create);
+            return formFile.CopyToAsync(stream, cancellationToken);
         }
 
         /// <summary>
@@ -135,13 +142,10 @@ namespace NetModular.Lib.Utils.Mvc.Helpers
         /// <returns></returns>
         public async Task<string> SaveWidthMd5(IFormFile formFile, string savePath, CancellationToken cancellationToken = default)
         {
-            string md5;
             //写入
-            using (var stream = new FileStream(savePath, FileMode.Create))
-            {
-                md5 = Md5Encrypt.Encrypt(stream);
-                await formFile.CopyToAsync(stream, cancellationToken);
-            }
+            await using var stream = new FileStream(savePath, FileMode.Create);
+            var md5 = Md5Encrypt.Encrypt(stream);
+            await formFile.CopyToAsync(stream, cancellationToken);
 
             return md5;
         }
@@ -163,29 +167,54 @@ namespace NetModular.Lib.Utils.Mvc.Helpers
         public IFormFile FormFile { get; set; }
 
         /// <summary>
+        /// 文件名称
+        /// </summary>
+        public string FileName { get; set; }
+
+        /// <summary>
         /// 存储根路径
         /// </summary>
         public string RootPath { get; set; }
 
         /// <summary>
-        /// 模块名称
+        /// 模块编码
         /// </summary>
-        public string Module { get; set; }
+        public string Module { get; set; } = string.Empty;
 
         /// <summary>
         /// 分组
         /// </summary>
-        public string Group { get; set; }
+        public string Group { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 路径
+        /// </summary>
+        public string SubPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 最大允许大小(单位：字节，为0表示不限制)
+        /// </summary>
+        public long MaxSize { get; set; }
+
+        /// <summary>
+        /// 限制后缀名
+        /// </summary>
+        public List<string> LimitExt { get; set; }
+
+        /// <summary>
+        /// 计算文件的MD5
+        /// </summary>
+        public bool CalcMd5 { get; set; } = true;
 
         /// <summary>
         /// 完整目录
         /// </summary>
-        public string FullPath => Path.Combine(RootPath, Module, Group);
+        public string FullPath => Path.Combine(RootPath, RelativePath);
 
         /// <summary>
         /// 相对目录
         /// </summary>
-        public string RelativePath => Path.Combine(Module, Group);
+        public string RelativePath => Path.Combine(Module, Group, SubPath ?? String.Empty);
     }
 
     /// <summary>

@@ -1,36 +1,32 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using NetModular.Lib.Auth.Abstractions;
 using NetModular.Lib.Auth.Web;
+using NetModular.Lib.Utils.Core.Attributes;
 using NetModular.Lib.Utils.Core.Enums;
-using NetModular.Lib.Utils.Core.Extensions;
-using NetModular.Lib.Utils.Core.SystemConfig;
-using NetModular.Module.Admin.Application.AccountService;
+using NetModular.Module.Admin.Infrastructure.AccountPermissionResolver;
 
 namespace NetModular.Module.Admin.Web.Core
 {
     /// <summary>
     /// 权限验证
     /// </summary>
+    [Singleton]
     public class PermissionValidateHandler : IPermissionValidateHandler
     {
         private readonly ILoginInfo _loginInfo;
-        private readonly IAccountService _accountService;
-        private readonly SystemConfigModel _systemConfig;
+        private readonly IAccountPermissionResolver _permissionResolver;
 
-        public PermissionValidateHandler(IAccountService accountService, ILoginInfo loginInfo, SystemConfigModel systemConfig)
+        public PermissionValidateHandler(ILoginInfo loginInfo, IAccountPermissionResolver permissionResolver)
         {
-            _accountService = accountService;
             _loginInfo = loginInfo;
-            _systemConfig = systemConfig;
+            _permissionResolver = permissionResolver;
         }
 
-        public bool Validate(IDictionary<string, string> routeValues, HttpMethod httpMethod)
+        public async Task<bool> Validate(IDictionary<string, string> routeValues, HttpMethod httpMethod)
         {
-            if (!_systemConfig.Permission.Validate)
-                return true;
-
-            var permissions = _accountService.QueryPermissionList(_loginInfo.AccountId, _loginInfo.Platform).Result;
+            var permissions = await _permissionResolver.Resolve(_loginInfo.AccountId, _loginInfo.Platform);
 
             var area = routeValues["area"];
             var controller = routeValues["controller"];

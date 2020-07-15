@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using NetModular.Lib.Auth.Abstractions;
+using NetModular.Module.Admin.Domain.Account;
 
 namespace NetModular.Module.Admin.Application.AccountService.ViewModels
 {
@@ -26,7 +27,7 @@ namespace NetModular.Module.Admin.Application.AccountService.ViewModels
         /// <summary>
         /// 名称
         /// </summary>
-        [Required(ErrorMessage = "请输入密码")]
+        [Required(ErrorMessage = "请输入名称")]
         public string Name { get; set; }
 
         /// <summary>
@@ -38,6 +39,11 @@ namespace NetModular.Module.Admin.Application.AccountService.ViewModels
         /// 邮箱
         /// </summary>
         public string Email { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 账户状态
+        /// </summary>
+        public AccountStatus Status { get; set; } = AccountStatus.Register;
 
         /// <summary>
         /// 账户是否锁定(锁定后不允许在账户管理中修改)

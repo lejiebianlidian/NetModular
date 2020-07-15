@@ -129,6 +129,7 @@ namespace NetModular.Lib.Data.Core
 
             return "";
         }
+
         public void AppendQueryWhere(StringBuilder sb, string queryWhere)
         {
             if (!string.IsNullOrWhiteSpace(queryWhere))
@@ -140,12 +141,16 @@ namespace NetModular.Lib.Data.Core
             }
         }
 
-        public abstract string GeneratePagingSql(string select, string table, string where, string sort, int skip, int take);
+        public abstract string GeneratePagingSql(string select, string table, string where, string sort, int skip, int take, string groupBy = null, string having = null);
 
-        public abstract string GenerateFirstSql(string select, string table, string where, string sort);
+        public abstract string GenerateFirstSql(string select, string table, string where, string sort, string groupBy = null, string having = null);
 
         public abstract Guid GenerateSequentialGuid();
 
         public abstract void CreateDatabase(List<IEntityDescriptor> entityDescriptors, IDatabaseCreateEvents events, out bool databaseExists);
+       
+        public abstract string GetColumnTypeName(IColumnDescriptor column, out string defaultValue);
+        
+        public abstract string GetCreateTableSql(IEntityDescriptor entityDescriptor, string tableName = null);
     }
 }

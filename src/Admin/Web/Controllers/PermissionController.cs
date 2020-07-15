@@ -1,45 +1,40 @@
-﻿using System.ComponentModel;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 using Microsoft.AspNetCore.Mvc;
-using NetModular.Lib.Utils.Core.Result;
-using NetModular.Lib.Utils.Mvc.Helpers;
-using NetModular.Module.Admin.Application.PermissionService;
-using NetModular.Module.Admin.Domain.Permission.Models;
-using NetModular.Module.Admin.Web.Core;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using NetModular.Lib.Auth.Web;
 
 namespace NetModular.Module.Admin.Web.Controllers
 {
     [Description("权限接口")]
-    public class PermissionController : ModuleController
+    public class PermissionController : Web.ModuleController
     {
-        private readonly PermissionHelper _permissionHelper;
-        private readonly IPermissionService _service;
+        private readonly PermissionCollection _collection;
 
-        public PermissionController(IPermissionService service, MvcHelper mvcHelper, PermissionHelper permissionHelper)
+        public PermissionController(PermissionCollection collection)
         {
-            _service = service;
-            _permissionHelper = permissionHelper;
+            _collection = collection;
         }
 
         [HttpGet]
         [Description("查询")]
-        public Task<IResultModel> Query([FromQuery]PermissionQueryModel model)
+        public IResultModel Query([BindRequired]string moduleCode)
         {
-            return _service.Query(model);
-        }
-
-        [HttpPost]
-        [Description("同步")]
-        public Task<IResultModel> Sync()
-        {
-            return _service.Sync(_permissionHelper.GetAllPermission());
+            return ResultModel.Success(_collection.Query(moduleCode));
         }
 
         [HttpGet]
         [Description("权限树")]
-        public Task<IResultModel> Tree()
+        public IResultModel Tree()
         {
-            return _service.GetTree();
+            return ResultModel.Success(_collection.Tree);
+        }
+
+        [HttpGet]
+        [Description("根据编码查询")]
+        public IResultModel QueryByCodes([FromQuery] List<string> codes)
+        {
+            return ResultModel.Success(_collection.Query(codes));
         }
     }
 }

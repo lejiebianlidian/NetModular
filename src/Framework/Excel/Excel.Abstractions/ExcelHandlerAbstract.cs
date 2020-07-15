@@ -5,28 +5,29 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using NetModular.Lib.Auth.Abstractions;
+using NetModular.Lib.Config.Abstractions;
+using NetModular.Lib.Config.Abstractions.Impl;
 using NetModular.Lib.Data.Query;
-using NetModular.Lib.Utils.Core.Extensions;
 using NetModular.Lib.Utils.Core.Result;
-using NetModular.Lib.Utils.Core.SystemConfig;
 
 namespace NetModular.Lib.Excel.Abstractions
 {
     public abstract class ExcelHandlerAbstract : IExcelHandler
     {
-        protected readonly ExcelOptions Options;
-        protected readonly SystemConfigModel SystemConfig;
         protected readonly ILoginInfo LoginInfo;
         private readonly IExcelExportHandler _exportHandler;
+        private readonly ExcelConfig _config;
+
+        private readonly IConfigProvider _configProvider;
         //导出Excel的对象的属性类型列表
         private readonly ConcurrentDictionary<RuntimeTypeHandle, Dictionary<string, PropertyInfo>> _exportObjectProperties = new ConcurrentDictionary<RuntimeTypeHandle, Dictionary<string, PropertyInfo>>();
 
-        protected ExcelHandlerAbstract(ExcelOptions options, SystemConfigModel systemConfig, ILoginInfo loginInfo, IExcelExportHandler exportHandler)
+        protected ExcelHandlerAbstract(ILoginInfo loginInfo, IExcelExportHandler exportHandler, ExcelConfig config, IConfigProvider configProvider)
         {
-            Options = options;
-            SystemConfig = systemConfig;
             LoginInfo = loginInfo;
             _exportHandler = exportHandler;
+            _config = config;
+            _configProvider = configProvider;
         }
 
         public ExcelExportResultModel Export<T>(ExportModel model, IList<T> entities) where T : class, new()
@@ -37,8 +38,15 @@ namespace NetModular.Lib.Excel.Abstractions
             //设置列对应的属性类型
             SetColumnPropertyType<T>(model);
 
+            if (_config.TempPath.IsNull())
+            {
+                var sysConfig = _configProvider.Get<PathConfig>();
+                _config.TempPath = Path.Combine(sysConfig.TempPath, "Excel");
+            }
+
             var saveName = Guid.NewGuid() + model.Format.ToDescription();
-            var saveDir = Path.Combine(Options.TempPath, "Export", DateTime.Now.Format("yyyyMMdd"));
+
+            var saveDir = Path.Combine(_config.TempPath, "Export", DateTime.Now.Format("yyyyMMdd"));
 
             if (!Directory.Exists(saveDir))
             {

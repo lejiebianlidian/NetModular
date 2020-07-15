@@ -10,8 +10,6 @@ using NetModular.Lib.Data.Abstractions.SqlQueryable;
 using NetModular.Lib.Data.Abstractions.SqlQueryable.GroupByQueryable;
 using NetModular.Lib.Data.Core.SqlQueryable.GroupByQueryable;
 using NetModular.Lib.Data.Core.SqlQueryable.Internal;
-using NetModular.Lib.Utils.Core;
-using NetModular.Lib.Utils.Core.Extensions;
 
 namespace NetModular.Lib.Data.Core.SqlQueryable
 {
@@ -20,7 +18,7 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
         where TEntity2 : IEntity, new()
         where TEntity3 : IEntity, new()
     {
-        public NetSqlQueryable(IDbSet dbSet, QueryBody queryBody, Expression<Func<TEntity, TEntity2, TEntity3, bool>> onExpression, JoinType joinType = JoinType.Left, string tableName = null) : base(dbSet, queryBody)
+        public NetSqlQueryable(IDbSet dbSet, QueryBody queryBody, Expression<Func<TEntity, TEntity2, TEntity3, bool>> onExpression, JoinType joinType = JoinType.Left, string tableName = null, bool noLock = true) : base(dbSet, queryBody)
         {
             Check.NotNull(onExpression, nameof(onExpression), "请输入连接条件");
 
@@ -29,7 +27,8 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
                 Type = joinType,
                 Alias = "T3",
                 EntityDescriptor = EntityDescriptorCollection.Get<TEntity3>(),
-                On = onExpression
+                On = onExpression,
+                NoLock = noLock
             };
             t3.TableName = tableName.NotNull() ? tableName : t3.EntityDescriptor.TableName;
 
@@ -218,6 +217,12 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
             return this;
         }
 
+        public INetSqlQueryable<TEntity, TEntity2, TEntity3> Where<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TKey>> key, QueryOperator queryOperator, INetSqlQueryable queryable)
+        {
+            QueryBody.SetWhere(key, queryOperator, queryable);
+            return this;
+        }
+
         public INetSqlQueryable<TEntity, TEntity2, TEntity3> Limit(int skip, int take)
         {
             QueryBody.SetLimit(skip, take);
@@ -230,19 +235,25 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
             return this;
         }
 
-        public INetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4> LeftJoin<TEntity4>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, bool>> onExpression, string tableName = null) where TEntity4 : IEntity, new()
+        public INetSqlQueryable<TEntity, TEntity2, TEntity3> SelectExclude<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TResult>> expression)
         {
-            return new NetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4>(Db, QueryBody, onExpression, JoinType.Left, tableName);
+            QueryBody.SetSelectExclude(expression);
+            return this;
         }
 
-        public INetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4> InnerJoin<TEntity4>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, bool>> onExpression, string tableName = null) where TEntity4 : IEntity, new()
+        public INetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4> LeftJoin<TEntity4>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity4 : IEntity, new()
         {
-            return new NetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4>(Db, QueryBody, onExpression, JoinType.Inner, tableName);
+            return new NetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4>(Db, QueryBody, onExpression, JoinType.Left, tableName, noLock);
         }
 
-        public INetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4> RightJoin<TEntity4>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, bool>> onExpression, string tableName = null) where TEntity4 : IEntity, new()
+        public INetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4> InnerJoin<TEntity4>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity4 : IEntity, new()
         {
-            return new NetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4>(Db, QueryBody, onExpression, JoinType.Right, tableName);
+            return new NetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4>(Db, QueryBody, onExpression, JoinType.Inner, tableName, noLock);
+        }
+
+        public INetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4> RightJoin<TEntity4>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity4 : IEntity, new()
+        {
+            return new NetSqlQueryable<TEntity, TEntity2, TEntity3, TEntity4>(Db, QueryBody, onExpression, JoinType.Right, tableName, noLock);
         }
 
         public TResult Max<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TResult>> expression)
@@ -290,6 +301,11 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
             return new GroupByQueryable3<TResult, TEntity, TEntity2, TEntity3>(Db, QueryBody, QueryBuilder, expression);
         }
 
+        public IGroupByQueryable3<INetSqlGroupingKey3<TEntity, TEntity2, TEntity3>, TEntity, TEntity2, TEntity3> GroupBy()
+        {
+            return new GroupByQueryable3<INetSqlGroupingKey3<TEntity, TEntity2, TEntity3>, TEntity, TEntity2, TEntity3>(Db, QueryBody, QueryBuilder, null);
+        }
+
         public new IList<TEntity> ToList()
         {
             return ToList<TEntity>();
@@ -323,6 +339,12 @@ namespace NetModular.Lib.Data.Core.SqlQueryable
         public INetSqlQueryable<TEntity, TEntity2, TEntity3> IncludeDeleted()
         {
             QueryBody.FilterDeleted = false;
+            return this;
+        }
+
+        public INetSqlQueryable<TEntity, TEntity2, TEntity3> NotFilterTenant()
+        {
+            QueryBody.FilterTenant = false;
             return this;
         }
 

@@ -183,9 +183,9 @@ namespace NetModular.Lib.Data.Core
             return Db.Get(id);
         }
 
-        public virtual TEntity Get(dynamic id, IUnitOfWork uow, bool rowLock = false)
+        public virtual TEntity Get(dynamic id, IUnitOfWork uow, bool rowLock = false, bool noLock = true)
         {
-            return Db.Get(id, uow, null, rowLock);
+            return Db.Get(id, uow, null, rowLock, noLock);
         }
 
         public virtual Task<TEntity> GetAsync(dynamic id)
@@ -193,9 +193,9 @@ namespace NetModular.Lib.Data.Core
             return Db.GetAsync(id);
         }
 
-        public virtual Task<TEntity> GetAsync(dynamic id, IUnitOfWork uow, bool rowLock = false)
+        public virtual Task<TEntity> GetAsync(dynamic id, IUnitOfWork uow, bool rowLock = false, bool noLock = true)
         {
-            return Db.GetAsync(id, uow, null, rowLock);
+            return Db.GetAsync(id, uow, null, rowLock, noLock);
         }
 
         protected virtual TEntity Get(Expression<Func<TEntity, bool>> @where)
@@ -274,6 +274,15 @@ namespace NetModular.Lib.Data.Core
         public Task<bool> ClearAsync(IUnitOfWork uow = null)
         {
             return Db.ClearAsync(uow);
+        }
+
+        #endregion
+
+        #region ==表操作==
+
+        public Task CreateTable(string tableName = null)
+        {
+            return Db.ExecuteAsync(DbContext.Options.SqlAdapter.GetCreateTableSql(Db.EntityDescriptor, tableName));
         }
 
         #endregion

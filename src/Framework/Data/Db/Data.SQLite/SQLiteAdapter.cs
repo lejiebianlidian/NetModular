@@ -8,7 +8,6 @@ using NetModular.Lib.Data.Abstractions.Entities;
 using NetModular.Lib.Data.Abstractions.Enums;
 using NetModular.Lib.Data.Abstractions.Options;
 using NetModular.Lib.Data.Core;
-using NetModular.Lib.Utils.Core.Extensions;
 using NetModular.Lib.Utils.Core.Helpers;
 
 namespace NetModular.Lib.Data.SQLite
@@ -40,12 +39,18 @@ namespace NetModular.Lib.Data.SQLite
 
         public override string FuncLength => "LENGTH";
 
-        public override string GeneratePagingSql(string select, string table, string where, string sort, int skip, int take)
+        public override string GeneratePagingSql(string select, string table, string where, string sort, int skip, int take, string groupBy = null, string having = null)
         {
             var sqlBuilder = new StringBuilder();
             sqlBuilder.AppendFormat("SELECT {0} FROM {1}", select, table);
             if (!string.IsNullOrWhiteSpace(where))
                 sqlBuilder.AppendFormat(" WHERE {0}", where);
+
+            if (groupBy.NotNull())
+                sqlBuilder.Append(groupBy);
+
+            if (having.NotNull())
+                sqlBuilder.Append(having);
 
             if (!string.IsNullOrWhiteSpace(sort))
                 sqlBuilder.AppendFormat(" ORDER BY {0}", sort);
@@ -54,9 +59,9 @@ namespace NetModular.Lib.Data.SQLite
             return sqlBuilder.ToString();
         }
 
-        public override string GenerateFirstSql(string select, string table, string where, string sort)
+        public override string GenerateFirstSql(string select, string table, string where, string sort, string groupBy = null, string having = null)
         {
-            return GeneratePagingSql(select, table, where, sort, 0, 1);
+            return GeneratePagingSql(select, table, where, sort, 0, 1, groupBy, having);
         }
 
         public override Guid GenerateSequentialGuid()
@@ -108,7 +113,7 @@ namespace NetModular.Lib.Data.SQLite
                     var obj = cmd.ExecuteScalar();
                     if (obj.ToInt() < 1)
                     {
-                        cmd.CommandText = CreateTableSql(entityDescriptor);
+                        cmd.CommandText = GetCreateTableSql(entityDescriptor);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -121,52 +126,10 @@ namespace NetModular.Lib.Data.SQLite
             }
         }
 
-        private string CreateTableSql(IEntityDescriptor entityDescriptor)
+        public override string GetColumnTypeName(IColumnDescriptor column, out string defaultValue)
         {
-            var columns = entityDescriptor.Columns;
-            var sql = new StringBuilder();
-            sql.AppendFormat("CREATE TABLE {0}(", AppendQuote(entityDescriptor.TableName));
+            defaultValue = "";
 
-            for (int i = 0; i < columns.Count; i++)
-            {
-                var column = columns[i];
-
-                sql.AppendFormat("`{0}` ", column.Name);
-                sql.AppendFormat("{0} ", Property2Column(column));
-
-                if (column.IsPrimaryKey)
-                {
-                    sql.Append("PRIMARY KEY ");
-
-                    if (entityDescriptor.PrimaryKey.IsInt() || entityDescriptor.PrimaryKey.IsLong())
-                    {
-                        sql.Append("AUTOINCREMENT ");
-                    }
-                }
-
-                if (!column.Nullable)
-                {
-                    sql.Append("NOT NULL ");
-                }
-
-                if (i < columns.Count - 1)
-                {
-                    sql.Append(",");
-                }
-            }
-
-            sql.Append(")");
-
-            return sql.ToString();
-        }
-
-        /// <summary>
-        /// 属性转换为列
-        /// </summary>
-        /// <param name="column"></param>
-        /// <returns></returns>
-        public string Property2Column(IColumnDescriptor column)
-        {
             var propertyType = column.PropertyInfo.PropertyType;
             var isNullable = propertyType.IsNullable();
             if (isNullable)
@@ -203,6 +166,45 @@ namespace NetModular.Lib.Data.SQLite
                 default:
                     return "text";
             }
+        }
+
+        public override string GetCreateTableSql(IEntityDescriptor entityDescriptor, string tableName = null)
+        {
+            var columns = entityDescriptor.Columns;
+            var sql = new StringBuilder();
+            sql.AppendFormat("CREATE TABLE {0}(", AppendQuote(tableName ?? entityDescriptor.TableName));
+
+            for (int i = 0; i < columns.Count; i++)
+            {
+                var column = columns[i];
+
+                sql.AppendFormat("`{0}` ", column.Name);
+                sql.AppendFormat("{0} ", column.TypeName);
+
+                if (column.IsPrimaryKey)
+                {
+                    sql.Append("PRIMARY KEY ");
+
+                    if (entityDescriptor.PrimaryKey.IsInt() || entityDescriptor.PrimaryKey.IsLong())
+                    {
+                        sql.Append("AUTOINCREMENT ");
+                    }
+                }
+
+                if (!column.Nullable)
+                {
+                    sql.Append("NOT NULL ");
+                }
+
+                if (i < columns.Count - 1)
+                {
+                    sql.Append(",");
+                }
+            }
+
+            sql.Append(")");
+
+            return sql.ToString();
         }
     }
 }

@@ -25,11 +25,39 @@ namespace NetModular.Module.Admin.Domain.Account
         /// </summary>
         /// <param name="userName">用户名</param>
         /// <param name="type">账户类型</param>
+        /// <param name="tenantId">租户编号</param>
         /// <returns></returns>
-        Task<AccountEntity> GetByUserName(string userName, AccountType type);
+        Task<AccountEntity> GetByUserName(string userName, AccountType type, Guid? tenantId);
 
         /// <summary>
-        /// 修改登录信息
+        /// 根据邮箱查询账户实体
+        /// </summary>
+        /// <param name="email">邮箱</param>
+        /// <param name="type">账户类型</param>
+        /// <param name="tenantId">租户编号</param>
+        /// <returns></returns>
+        Task<AccountEntity> GetByEmail(string email, AccountType type, Guid? tenantId);
+
+        /// <summary>
+        /// 根据手机号查询账户实体
+        /// </summary>
+        /// <param name="phone">邮箱</param>
+        /// <param name="type">账户类型</param>
+        /// <param name="tenantId">租户编号</param>
+        /// <returns></returns>
+        Task<AccountEntity> GetByPhone(string phone, AccountType type, Guid? tenantId);
+
+        /// <summary>
+        /// 根据用户名或邮箱获取实体
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="type"></param>
+        /// <param name="tenantId">租户编号</param>
+        /// <returns></returns>
+        Task<AccountEntity> GetByUserNameOrEmail(string keyword, AccountType type, Guid? tenantId);
+
+        /// <summary>
+        /// 修改账户状态
         /// </summary>
         /// <param name="id"></param>
         /// <param name="status">状态</param>

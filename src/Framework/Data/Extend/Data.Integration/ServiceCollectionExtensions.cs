@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using Dapper;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetModular.Lib.Auth.Abstractions;
@@ -13,8 +14,6 @@ using NetModular.Lib.Data.Abstractions.Enums;
 using NetModular.Lib.Data.Abstractions.Options;
 using NetModular.Lib.Data.Core;
 using NetModular.Lib.Module.Abstractions;
-using NetModular.Lib.Utils.Core;
-using NetModular.Lib.Utils.Core.Extensions;
 using NetModular.Lib.Utils.Core.Helpers;
 
 namespace NetModular.Lib.Data.Integration
@@ -25,14 +24,15 @@ namespace NetModular.Lib.Data.Integration
         /// 添加数据库
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="environmentName"></param>
+        /// <param name="cfg"></param>
         /// <param name="modules"></param>
-        public static void AddDb(this IServiceCollection services, string environmentName, IModuleCollection modules)
+        public static void AddDb(this IServiceCollection services, IConfiguration cfg, IModuleCollection modules)
         {
             if (modules == null || !modules.Any())
                 return;
 
-            var dbOptions = new ConfigurationHelper().Get<DbOptions>("Db", environmentName);
+            var dbOptions = new DbOptions();
+            cfg.GetSection("Db").Bind(dbOptions);
 
             if (dbOptions?.Modules == null || !dbOptions.Modules.Any())
                 return;
@@ -51,7 +51,7 @@ namespace NetModular.Lib.Data.Integration
 
             foreach (var options in dbOptions.Modules)
             {
-                var module = modules.FirstOrDefault(m => m.Id.EqualsIgnoreCase(options.Name));
+                var module = modules.FirstOrDefault(m => m.Code.EqualsIgnoreCase(options.Name));
                 if (module != null)
                 {
                     services.AddDbContext(module, options, dbOptions);
@@ -119,8 +119,8 @@ namespace NetModular.Lib.Data.Integration
                     contextOptions.DatabaseCreateEvents = (IDatabaseCreateEvents)Activator.CreateInstance(createDatabaseEvent);
                 }
 
-                //注入数据库上下文
-                var dbContext = (IDbContext)Activator.CreateInstance(dbContextType, contextOptions, sp);
+                //创建数据库上下文实例
+                var dbContext = (IDbContext)Activator.CreateInstance(dbContextType, contextOptions);
 
                 #region ==执行初始化脚本==
 
@@ -164,6 +164,7 @@ namespace NetModular.Lib.Data.Integration
 
                 #endregion
 
+                //注入数据库上下文
                 services.AddSingleton(dbContextType, dbContext);
 
                 services.AddRepositories(module, dbContext, dbOptions);

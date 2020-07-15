@@ -1,25 +1,23 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using NetModular.Lib.Utils.Core.Helpers;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace NetModular.Lib.MQ.RabbitMQ
 {
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// 添加RabbitMQ
+        /// 添加RabbitMQ功能
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="environmentName"></param>
+        /// <param name="cfg"></param>
         /// <returns></returns>
-        // ReSharper disable once InconsistentNaming
-        public static IServiceCollection AddRabbitMQ(this IServiceCollection services, string environmentName)
+        public static IServiceCollection AddRabbitMQ(this IServiceCollection services, IConfiguration cfg)
         {
-            var cfgHelper = new ConfigurationHelper();
-            var options = cfgHelper.Get<RabbitMQOptions>("MQ", environmentName);
-            if (options == null)
-                return services;
+            var config = new RabbitMQConfig();
+            var section = cfg.GetSection("RabbitMQ");
+            section?.Bind(config);
 
-            services.AddSingleton(options);
+            services.AddSingleton(config);
             services.AddSingleton<RabbitMQClient>();
 
             return services;

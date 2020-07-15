@@ -4,17 +4,19 @@
 NetModular
 </h1>
 
-[English](README_EN.MD)
-
 ## NetModular是什么
 
-> **她** 是一款基于.Net Core 和 Vue.js 的模块化以及前后端分离的快速开发框架
+> **她** 是一款基于.Net Core 和 Vue.js 的业务模块化以及前后端分离的快速开发框架
 
 > **她** 是能够让中小企业或团队快速搭建内部开发平台的解决方案
 
 > **她** 开箱即用
 
 > **她** 完全免费
+
+## 友情提醒
+
+由于个人精力有限，本框架文档说明暂时不够完善(后续会努力完善)，生产环境请慎重考虑~
 
 ## 开发环境
 
@@ -34,24 +36,27 @@ NetModular
 
 前端框架的源码请移步 [https://github.com/iamoldli/NetModular.UI](https://github.com/iamoldli/NetModular.UI)
 
-## 微服务框架
+## 前端皮肤
 
-基于NetModular扩展的微服务框架 [NetModular.Microservice](https://github.com/iamoldli/NetModular.Microservice)
+Classics [https://github.com/iamoldli/NetModular.Skins.Classics](https://github.com/iamoldli/NetModular.Skins.Classics)
 
 ## 演示地址
 
 演示地址：[https://demo.17mkh.com/](https://demo.17mkh.com/)  
 账 户：admin  
 密 码: admin  
+
 演示源码：[https://github.com/iamoldli/NetModular.Demo](https://github.com/iamoldli/NetModular.Demo)
 
 ## 官方文档
 
 文档地址： [https://docs.17mkh.com](https://docs.17mkh.com)
 
-文档源码： [https://github.com/iamoldli/NetModular.Docs](https://github.com/iamoldli/NetModular.Docs)
+文档项目的源码请移步： [https://github.com/iamoldli/NetModular.Docs](https://github.com/iamoldli/NetModular.Docs)
 
 ## 模块列表
+
+本仓库只包含基础框架以及权限管理(Admin)模块代码，其它模块请点击以下链接查看~
 
 > 00 [Admin(权限管理)](https://github.com/iamoldli/NetModular/tree/master/src/Admin) 已完成
 
@@ -61,43 +66,18 @@ NetModular
 
 > 03 [Quartz(任务调度)](https://github.com/iamoldli/Nm.Module.Quartz) 已完成
 
-> 04 [PersonnelFiles(人事档案)](https://github.com/iamoldli/NetModular.Module.PersonnelFiles) 开发中
+> 04 [PersonnelFiles(人事档案)](https://github.com/iamoldli/NetModular.Module.PersonnelFiles) 已完成
 
-> 05 [Crawler(爬虫模块)](https://github.com/iamoldli/NetModular.Module.Crawler) 开发中
+> 05 [Cas(统一认证)](https://github.com/iamoldli/NetModular.Module.Cas) 计划中
 
-> 06 [Cas(统一认证)](https://github.com/iamoldli/NetModular.Module.Cas) 开发中
+> 06 [IM(即时通讯)](https://github.com/iamoldli/NetModular.Module.IM) 计划中
 
-> 07 [IM(即时通讯)](https://github.com/iamoldli/NetModular.Module.IM) 开发中
+> 90 [Forum(论坛)](https://github.com/iamoldli/NetModular.Module.Forum) 计划中
 
-> 08 [Forum(论坛)](https://github.com/iamoldli/NetModular.Module.Forum) 开发中
-
-> 09 [Blog(博客)](https://github.com/iamoldli/NetModular.Module.Blog) 开发中
-
-> 10 [Contract(合同管理)](https://github.com/iamoldli/NetModular.Module.Contract) 开发中
-
-> 11 [News(新闻管理)](https://github.com/iamoldli/NetModular.Module.News) 开发中
-
-> 12 [Performance(绩效考核)](https://github.com/iamoldli/NetModular.Module.Performance) 开发中
-
-> 13 [Meeting(会议管理)](https://github.com/iamoldli/NetModular.Module.Meeting) 开发中
-
-> 14 [Book(图书管理)](https://github.com/iamoldli/NetModular.Module.Book) 开发中
-
-> 15 [Archives(档案管理)](https://github.com/iamoldli/NetModular.Module.Archives) 开发中
-
-> 16 [Document(文档管理)](https://github.com/iamoldli/NetModular.Module.Document) 开发中
-
-> 17 [Salary(薪酬管理)](https://github.com/iamoldli/NetModular.Module.Salary) 开发中
+> 91 [Blog(博客)](https://github.com/iamoldli/NetModular.Module.Blog) 计划中
 
 ## 技术交流
 
 QQ 群：点击加群 [903210423](http://shang.qq.com/wpa/qunwpa?idkey=cfc871fccc7173f17ac2c9d12c8a31a7549c260e6aefcb6a40fdcc4b423940b0)
 
 <img src="./img/qq.jpg" alt="QQ" height="300"/>
-
-<h4 align="center">
-如您觉得本框架对您有帮助，可以请作者媳妇儿喝杯二锅头~
-<br>
-<br>
-  <img src="./img/airpay.jpg" alt="支付宝" height="320"/><img src="./img/wechat.jpg" alt="微信" height="320"/>
-</h4>

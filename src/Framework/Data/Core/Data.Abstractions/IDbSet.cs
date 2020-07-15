@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Dapper;
 using NetModular.Lib.Data.Abstractions.Entities;
 using NetModular.Lib.Data.Abstractions.SqlQueryable;
 
@@ -71,6 +72,28 @@ namespace NetModular.Lib.Data.Abstractions
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
         Task<T> ExecuteScalarAsync<T>(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null);
+
+        #endregion
+
+        #region ==ExecuteReader==
+
+        /// <summary>
+        /// ExecuteReader
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <param name="param"></param>
+        /// <param name="uow"></param>
+        /// <param name="commandType"></param>
+        IDataReader ExecuteReader(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null);
+
+        /// <summary>
+        /// ExecuteReader
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <param name="param"></param>
+        /// <param name="uow"></param>
+        /// <param name="commandType"></param>
+        Task<IDataReader> ExecuteReaderAsync(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null);
 
         #endregion
 
@@ -166,25 +189,27 @@ namespace NetModular.Lib.Data.Abstractions
 
         #endregion
 
-        #region ==ExecuteReader==
+        #region ==QueryMultipleAsync==
 
         /// <summary>
-        /// ExecuteReader
+        /// 查询多条结果
         /// </summary>
-        /// <param name="sql"></param>
-        /// <param name="param"></param>
-        /// <param name="uow"></param>
-        /// <param name="commandType"></param>
-        IDataReader ExecuteReader(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null);
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="uow">工作单元</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        SqlMapper.GridReader QueryMultiple(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null);
 
         /// <summary>
-        /// ExecuteReader
+        /// 查询多条结果
         /// </summary>
-        /// <param name="sql"></param>
-        /// <param name="param"></param>
-        /// <param name="uow"></param>
-        /// <param name="commandType"></param>
-        Task<IDataReader> ExecuteReaderAsync(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null);
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="uow">工作单元</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<SqlMapper.GridReader> QueryMultipleAsync(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null);
 
         #endregion
 
@@ -361,8 +386,9 @@ namespace NetModular.Lib.Data.Abstractions
         /// <param name="uow">工作单元</param>
         /// <param name="tableName">指定表名称</param>
         /// <param name="rowLock">行锁</param>
+        /// <param name="noLock">SqlServer的NOLOCK</param>
         /// <returns></returns>
-        TEntity Get(dynamic id, IUnitOfWork uow = null, string tableName = null, bool rowLock = false);
+        TEntity Get(dynamic id, IUnitOfWork uow = null, string tableName = null, bool rowLock = false, bool noLock = true);
 
         /// <summary>
         /// 根据主键查询
@@ -371,8 +397,9 @@ namespace NetModular.Lib.Data.Abstractions
         /// <param name="uow">工作单元</param>
         /// <param name="tableName">指定表名称</param>
         /// <param name="rowLock">行锁</param>
+        /// <param name="noLock">SqlServer的NOLOCK</param>
         /// <returns></returns>
-        Task<TEntity> GetAsync(dynamic id, IUnitOfWork uow = null, string tableName = null, bool rowLock = false);
+        Task<TEntity> GetAsync(dynamic id, IUnitOfWork uow = null, string tableName = null, bool rowLock = false, bool noLock = true);
 
         #endregion
 
@@ -384,8 +411,9 @@ namespace NetModular.Lib.Data.Abstractions
         /// <param name="id">主键</param>
         /// <param name="uow">工作单元</param>
         /// <param name="tableName">指定表名称</param>
+        /// <param name="noLock">SqlServer的NOLOCK</param>
         /// <returns></returns>
-        bool Exists(dynamic id, IUnitOfWork uow = null, string tableName = null);
+        bool Exists(dynamic id, IUnitOfWork uow = null, string tableName = null, bool noLock = true);
 
         /// <summary>
         /// 删除
@@ -393,8 +421,9 @@ namespace NetModular.Lib.Data.Abstractions
         /// <param name="id">主键</param>
         /// <param name="uow">工作单元</param>
         /// <param name="tableName">指定表名称</param>
+        /// <param name="noLock">SqlServer的NOLOCK</param>
         /// <returns></returns>
-        Task<bool> ExistsAsync(dynamic id, IUnitOfWork uow = null, string tableName = null);
+        Task<bool> ExistsAsync(dynamic id, IUnitOfWork uow = null, string tableName = null, bool noLock = true);
 
         #endregion
 
@@ -403,30 +432,34 @@ namespace NetModular.Lib.Data.Abstractions
         /// <summary>
         /// 查询
         /// </summary>
+        /// <param name="noLock">针对SqlServer查询是否使用NoLock特性</param>
         /// <returns></returns>
-        INetSqlQueryable<TEntity> Find();
+        INetSqlQueryable<TEntity> Find(bool noLock = true);
 
         /// <summary>
         /// 查询
         /// </summary>
         /// <param name="expression">过滤条件</param>
+        /// <param name="noLock">针对SqlServer查询是否使用NoLock特性</param>
         /// <returns></returns>
-        INetSqlQueryable<TEntity> Find(Expression<Func<TEntity, bool>> expression);
+        INetSqlQueryable<TEntity> Find(Expression<Func<TEntity, bool>> expression, bool noLock = true);
 
         /// <summary>
         /// 查询
         /// </summary>
         /// <param name="tableName">指定表名称</param>
+        /// <param name="noLock">针对SqlServer查询是否使用NoLock特性</param>
         /// <returns></returns>
-        INetSqlQueryable<TEntity> Find(string tableName);
+        INetSqlQueryable<TEntity> Find(string tableName, bool noLock = true);
 
         /// <summary>
         /// 查询
         /// </summary>
         /// <param name="expression">过滤条件</param>
         /// <param name="tableName">指定表名称</param>
+        /// <param name="noLock">针对SqlServer查询是否使用NoLock特性</param>
         /// <returns></returns>
-        INetSqlQueryable<TEntity> Find(Expression<Func<TEntity, bool>> expression, string tableName);
+        INetSqlQueryable<TEntity> Find(Expression<Func<TEntity, bool>> expression, string tableName, bool noLock = true);
 
         #endregion
 

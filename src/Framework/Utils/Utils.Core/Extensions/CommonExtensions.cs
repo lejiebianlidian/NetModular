@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Text;
 
-namespace NetModular.Lib.Utils.Core.Extensions
+// ReSharper disable once CheckNamespace
+namespace NetModular
 {
     /// <summary>
     /// 通用扩展方法
@@ -21,6 +22,20 @@ namespace NetModular.Lib.Utils.Core.Extensions
                 return 0;
 
             byte.TryParse(s.ToString(), out byte result);
+            return result;
+        }
+
+        /// <summary>
+        /// 转换成Char
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static char ToChar(this object s)
+        {
+            if (s == null || s == DBNull.Value)
+                return default;
+
+            char.TryParse(s.ToString(), out char result);
             return result;
         }
 
@@ -184,6 +199,19 @@ namespace NetModular.Lib.Utils.Core.Extensions
         public static Guid ToGuid(this string s)
         {
             if (s.NotNull() && Guid.TryParse(s, out Guid val))
+                return val;
+
+            return Guid.Empty;
+        }
+
+        /// <summary>
+        /// 字符串转Guid
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static Guid ToGuid(this object s)
+        {
+            if (s != null && Guid.TryParse(s.ToString(), out Guid val))
                 return val;
 
             return Guid.Empty;

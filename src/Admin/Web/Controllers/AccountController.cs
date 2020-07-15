@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using NetModular.Lib.Auth.Abstractions;
 using NetModular.Lib.Auth.Web.Attributes;
-using NetModular.Lib.Utils.Core.Result;
 using NetModular.Module.Admin.Application.AccountService;
 using NetModular.Module.Admin.Application.AccountService.ViewModels;
 using NetModular.Module.Admin.Domain.Account.Models;
@@ -13,7 +12,7 @@ using NetModular.Module.Admin.Domain.Account.Models;
 namespace NetModular.Module.Admin.Web.Controllers
 {
     [Description("账户管理")]
-    public class AccountController : ModuleController
+    public class AccountController : Web.ModuleController
     {
         private readonly ILoginInfo _loginInfo;
         private readonly IAccountService _service;
@@ -88,6 +87,13 @@ namespace NetModular.Module.Admin.Web.Controllers
         public Task<IResultModel> SkinUpdate(AccountSkinUpdateModel model)
         {
             return _service.SkinUpdate(_loginInfo.AccountId, model);
+        }
+
+        [HttpPost]
+        [Description("激活账户")]
+        public Task<IResultModel> Active([BindRequired]Guid id)
+        {
+            return _service.Active(id);
         }
     }
 }

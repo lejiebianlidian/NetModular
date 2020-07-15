@@ -1,17 +1,15 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using NetModular.Lib.Cache.Abstractions;
-using NetModular.Lib.Utils.Core.Extensions;
-using NetModular.Lib.Utils.Core.Result;
 
 namespace NetModular.Module.Admin.Application.CacheService
 {
     public class CacheService : ICacheService
     {
-        private readonly ICacheKeyDescriptorCollection _collection;
+        private readonly CacheKeyDescriptorCollection _collection;
         private readonly ICacheHandler _cacheHandler;
 
-        public CacheService(ICacheKeyDescriptorCollection collection, ICacheHandler cacheHandler)
+        public CacheService(CacheKeyDescriptorCollection collection, ICacheHandler cacheHandler)
         {
             _collection = collection;
             _cacheHandler = cacheHandler;
@@ -19,7 +17,7 @@ namespace NetModular.Module.Admin.Application.CacheService
 
         public IResultModel Query(string moduleCode)
         {
-            var list = _collection.GetByModule(moduleCode).ToList();
+            var list = _collection.Where(m => m.ModuleCode.EqualsIgnoreCase(moduleCode)).ToList();
             var result = new QueryResultModel<CacheKeyDescriptor>
             {
                 Rows = list,

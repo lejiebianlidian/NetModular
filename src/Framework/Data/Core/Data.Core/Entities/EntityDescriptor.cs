@@ -7,7 +7,6 @@ using NetModular.Lib.Data.Abstractions.Attributes;
 using NetModular.Lib.Data.Abstractions.Entities;
 using NetModular.Lib.Data.Abstractions.Options;
 using NetModular.Lib.Data.Core.Entities.Extend;
-using NetModular.Lib.Utils.Core.Extensions;
 
 namespace NetModular.Lib.Data.Core.Entities
 {
@@ -17,6 +16,10 @@ namespace NetModular.Lib.Data.Core.Entities
     public class EntityDescriptor : IEntityDescriptor
     {
         #region ==属性==
+
+        public IDbContext DbContext { get; }
+
+        public IDbSet DbSet { get; set; }
 
         /// <summary>
         /// 数据库配置
@@ -69,21 +72,25 @@ namespace NetModular.Lib.Data.Core.Entities
 
         public bool IsEntityBase { get; }
 
+        public bool IsTenant { get; }
+
         #endregion
 
         #region ==构造器==
 
-        public EntityDescriptor(DbModuleOptions dbOptions, Type entityType, ISqlAdapter sqlAdapter)
+        public EntityDescriptor(IDbContext dbContext, Type entityType)
         {
-            DbOptions = dbOptions;
+            DbContext = dbContext;
 
-            ModuleName = dbOptions.Name;
+            DbOptions = dbContext.Options.DbModuleOptions;
 
-            SqlAdapter = sqlAdapter;
+            SqlAdapter = dbContext.Options.SqlAdapter;
+
+            ModuleName = DbOptions.Name;
 
             EntityType = entityType;
 
-            Database = sqlAdapter.Database;
+            Database = SqlAdapter.Database;
 
             PrimaryKey = new PrimaryKeyDescriptor();
 
@@ -95,10 +102,12 @@ namespace NetModular.Lib.Data.Core.Entities
 
             SetColumns();
 
-            var sqlBuilder = new EntitySqlBuilder(this);
+            var sqlBuilder = new EntitySqlBuilder(this, dbContext.Options.DbOptions);
             Sql = sqlBuilder.Build();
 
             IsEntityBase = EntityType.IsSubclassOfGeneric(typeof(EntityBase<>)) || EntityType.IsSubclassOfGeneric(typeof(EntityBaseWithSoftDelete<,>));
+
+            IsTenant = typeof(ITenant).IsAssignableFrom(EntityType);
         }
 
         #endregion
@@ -172,7 +181,7 @@ namespace NetModular.Lib.Data.Core.Entities
 
             foreach (var p in properties)
             {
-                var column = new ColumnDescriptor(p);
+                var column = new ColumnDescriptor(p, SqlAdapter);
                 if (column.IsPrimaryKey)
                 {
                     PrimaryKey = new PrimaryKeyDescriptor(p);

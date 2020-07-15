@@ -10,7 +10,12 @@ namespace NetModular.Lib.Module.Abstractions
         /// <summary>
         /// 编号
         /// </summary>
-        string Id { get; set; }
+        int Id { get; set; }
+
+        /// <summary>
+        /// 编码
+        /// </summary>
+        string Code { get; set; }
 
         /// <summary>
         /// 名称
@@ -26,6 +31,11 @@ namespace NetModular.Lib.Module.Abstractions
         /// 版本
         /// </summary>
         string Version { get; set; }
+
+        /// <summary>
+        /// 说明介绍
+        /// </summary>
+        string Description { get; set; }
 
         /// <summary>
         /// 服务配置器

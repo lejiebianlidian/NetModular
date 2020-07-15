@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using NetModular.Lib.Data.Abstractions.Attributes;
-using NetModular.Lib.Utils.Core.Extensions;
+﻿using NetModular.Lib.Data.Abstractions.Attributes;
 
 namespace NetModular.Module.Admin.Domain.Menu
 {
@@ -23,10 +21,5 @@ namespace NetModular.Module.Admin.Domain.Menu
         /// </summary>
         [Ignore]
         public string TargetName => Target.ToDescription();
-
-        /// <summary>
-        /// 子菜单
-        /// </summary>
-        public IList<MenuEntity> Children { get; set; }
     }
 }

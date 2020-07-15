@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using NetModular.Lib.Auth.Web.Attributes;
-using NetModular.Lib.Utils.Core.Extensions;
 using NetModular.Lib.Validation.Abstractions;
 
 namespace NetModular.Lib.Auth.Web
@@ -14,6 +12,7 @@ namespace NetModular.Lib.Auth.Web
     [ApiController]
     [PermissionValidate]
     [ValidateResultFormat]
+    [Auditing]
     public abstract class ControllerAbstract : ControllerBase
     {
         /// <summary>
@@ -28,7 +27,7 @@ namespace NetModular.Lib.Auth.Web
             {
                 fileName = DateTime.Now.ToString("yyyyMMddHHmmss");
             }
-            return PhysicalFile(filePath, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", HttpUtility.UrlEncode(fileName), true);
+            return PhysicalFile(filePath, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName, true);
         }
     }
 }
