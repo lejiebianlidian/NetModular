@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Dapper;
+using Microsoft.Extensions.Logging;
 using NetModular.Lib.Data.Abstractions;
 using NetModular.Lib.Data.Abstractions.Entities;
 using NetModular.Lib.Data.Abstractions.Enums;
@@ -14,7 +15,7 @@ namespace NetModular.Lib.Data.PostgreSQL
 {
     internal class PostgreSQLAdapter : SqlAdapterAbstract
     {
-        public PostgreSQLAdapter(DbOptions dbOptions, DbModuleOptions options) : base(dbOptions, options)
+        public PostgreSQLAdapter(DbOptions dbOptions, DbModuleOptions options, ILoggerFactory loggerFactory) : base(dbOptions, options, loggerFactory?.CreateLogger<PostgreSQLAdapter>())
         {
         }
 
@@ -30,6 +31,37 @@ namespace NetModular.Lib.Data.PostgreSQL
         public override string FuncLength => "CHAR_LENGTH";
 
         public override bool ToLower => true;
+        public override string ConnectionStringBuild(string tableName = null)
+        {
+            if (tableName.IsNull() && Options.ConnectionString.NotNull())
+                return Options.ConnectionString;
+
+            Check.NotNull(DbOptions.Server, nameof(DbOptions.Server), "数据库服务器地址不能为空");
+            Check.NotNull(DbOptions.UserId, nameof(DbOptions.UserId), "数据库用户名不能为空");
+            Check.NotNull(DbOptions.Password, nameof(DbOptions.Password), "数据库密码不能为空");
+
+            Options.Version = DbOptions.Version;
+            var connStrBuilder = new NpgsqlConnectionStringBuilder
+            {
+                Host = DbOptions.Server,
+                Port = DbOptions.Port > 0 ? DbOptions.Port : 5432,
+                Database = tableName.NotNull() ? tableName : Options.Database,
+                Username = DbOptions.UserId,
+                Password = DbOptions.Password
+            };
+            if (DbOptions.NpgsqlDatabaseName.NotNull())
+            {
+                connStrBuilder.Database = DbOptions.NpgsqlDatabaseName;
+            }
+
+            var connStr = connStrBuilder.ToString();
+
+            //该参数为null表示使用的是当前模块的数据库
+            if (tableName.IsNull())
+                Options.ConnectionString = connStr;
+
+            return connStr;
+        }
 
         public override string GeneratePagingSql(string select, string table, string where, string sort, int skip, int take, string groupBy = null, string having = null)
         {
@@ -67,18 +99,9 @@ namespace NetModular.Lib.Data.PostgreSQL
 
         public override void CreateDatabase(List<IEntityDescriptor> entityDescriptors, IDatabaseCreateEvents events, out bool databaseExists)
         {
-            var connStrBuilder = new NpgsqlConnectionStringBuilder
-            {
-                Host = DbOptions.Server,
-                Port = DbOptions.Port > 0 ? DbOptions.Port : 5432,
-                Database = "postgres",
-                Username = DbOptions.UserId,
-                Password = DbOptions.Password
-            };
-
             if (DbOptions.NpgsqlDatabaseName.NotNull())
             {
-                using var con1 = new NpgsqlConnection(connStrBuilder.ToString());
+                using var con1 = new NpgsqlConnection(ConnectionStringBuild("postgres"));
                 con1.Open();
                 var existsDatabase = con1.ExecuteScalar($"SELECT 1 FROM pg_catalog.pg_database u where u.datname='{DbOptions.NpgsqlDatabaseName}';").ToInt() > 0;
                 if (!existsDatabase)
@@ -87,22 +110,24 @@ namespace NetModular.Lib.Data.PostgreSQL
                     con1.Execute($"CREATE DATABASE {DbOptions.NpgsqlDatabaseName};");
                 }
                 con1.Close();
-
-                connStrBuilder.Database = DbOptions.NpgsqlDatabaseName;
             }
 
-            using var con = new NpgsqlConnection(connStrBuilder.ToString());
+            using var con = new NpgsqlConnection(Options.ConnectionString);
             con.Open();
+            var cmd = con.CreateCommand();
+            cmd.CommandType = System.Data.CommandType.Text;
 
             //判断数据库是否已存在
-            databaseExists = con.ExecuteScalar($"SELECT 1 FROM pg_namespace WHERE nspname = '{Options.Database}' LIMIT 1;").ToInt() > 0;
+            cmd.CommandText = $"SELECT 1 FROM pg_namespace WHERE nspname = '{Options.Database}' LIMIT 1;";
+            databaseExists = cmd.ExecuteScalar().ToInt() > 0;
             if (!databaseExists)
             {
                 //执行创建前事件
                 events?.Before().GetAwaiter().GetResult();
 
                 //创建数据库
-                con.Execute($"CREATE SCHEMA {Options.Database};");
+                cmd.CommandText = $"CREATE SCHEMA {Options.Database};";
+                cmd.ExecuteNonQuery();
             }
 
             //创建表
@@ -110,6 +135,9 @@ namespace NetModular.Lib.Data.PostgreSQL
             {
                 if (!entityDescriptor.Ignore)
                 {
+                    var sql = GetCreateTableSql(entityDescriptor);
+                    Logger?.LogInformation("执行创建表SQL：{@sql}", sql);
+                    cmd.CommandText = sql;
                     con.Execute(GetCreateTableSql(entityDescriptor));
                 }
             }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using NetModular.Lib.Data.Abstractions;
 using NetModular.Lib.Data.Abstractions.Entities;
 using NetModular.Lib.Data.Abstractions.Enums;
@@ -10,11 +11,17 @@ namespace NetModular.Lib.Data.Core
 {
     public abstract class SqlAdapterAbstract : ISqlAdapter
     {
-        protected SqlAdapterAbstract(DbOptions dbOptions, DbModuleOptions options)
+        protected SqlAdapterAbstract(DbOptions dbOptions, DbModuleOptions options, ILogger logger)
         {
             DbOptions = dbOptions;
             Options = options;
+            Logger = logger;
         }
+
+        /// <summary>
+        /// 日志记录器
+        /// </summary>
+        public ILogger Logger { get; }
 
         public DbOptions DbOptions { get; }
 
@@ -53,6 +60,8 @@ namespace NetModular.Lib.Data.Core
         public virtual string FuncUpper => "UPPER";
 
         public virtual bool ToLower => false;
+
+        public abstract string ConnectionStringBuild(string tableName = null);
 
         /// <summary>
         /// 附加引号
@@ -148,9 +157,9 @@ namespace NetModular.Lib.Data.Core
         public abstract Guid GenerateSequentialGuid();
 
         public abstract void CreateDatabase(List<IEntityDescriptor> entityDescriptors, IDatabaseCreateEvents events, out bool databaseExists);
-       
+
         public abstract string GetColumnTypeName(IColumnDescriptor column, out string defaultValue);
-        
+
         public abstract string GetCreateTableSql(IEntityDescriptor entityDescriptor, string tableName = null);
     }
 }

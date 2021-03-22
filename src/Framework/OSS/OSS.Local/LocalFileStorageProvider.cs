@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using NetModular.Lib.Config.Abstractions;
+using NetModular.Lib.Host.Web.Options;
 using NetModular.Lib.OSS.Abstractions;
 using NetModular.Lib.Utils.Core.Enums;
 using NetModular.Lib.Utils.Mvc.Extensions;
